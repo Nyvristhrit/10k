@@ -1,18 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/theme/tenk_skin.dart';
+import '../../application/providers/app_providers.dart';
+import '../../shared/trash/trash_taunts.dart';
 import '../../shared/widgets/app_background.dart';
 
 /// Fiche d'information : règles du jeu, aide sur l'appli, et « à propos ».
 /// Accessible depuis le petit « ? » de l'accueil.
-class InfoScreen extends StatefulWidget {
+///
+/// C'est aussi la porte dérobée du **mode trash** : sept tapes sur la carte de
+/// dédicace (onglet « À propos ») font basculer l'appli, exactement comme les
+/// sept tapes sur le numéro de build déverrouillent les options développeur
+/// d'Android.
+class InfoScreen extends ConsumerStatefulWidget {
   const InfoScreen({super.key});
 
   @override
-  State<InfoScreen> createState() => _InfoScreenState();
+  ConsumerState<InfoScreen> createState() => _InfoScreenState();
 }
 
-class _InfoScreenState extends State<InfoScreen> {
+class _InfoScreenState extends ConsumerState<InfoScreen> {
   int _tab = 0;
+  int _taps = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +47,10 @@ class _InfoScreenState extends State<InfoScreen> {
                       ButtonSegment(value: 2, label: Text('À propos')),
                     ],
                     selected: {_tab},
-                    onSelectionChanged: (s) => setState(() => _tab = s.first),
+                    onSelectionChanged: (s) => setState(() {
+                      _tab = s.first;
+                      _taps = 0; // on repart de zéro en changeant d'onglet
+                    }),
                   ),
                 ),
               ),
@@ -232,13 +246,23 @@ class _InfoScreenState extends State<InfoScreen> {
               'Aucune connexion, aucun compte, aucune donnée envoyée. Tout reste '
               'sur ton téléphone.',
         ),
-        const _Rule(
-          emoji: '🌈',
-          title: 'Imaginé par Ben, vibecodé par Claude',
-          text:
-              'Un projet perso pour les soirées entre amis. Dédicace à Fanch, '
-              'Khorven et Victor pour cette introduction aux 10 000 ! 🍻',
+        // La carte de dédicace cache l'interrupteur du mode trash : sept tapes
+        // et l'appli change de personnalité (voir `_onDedicationTap`).
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _onDedicationTap,
+          child: const _Rule(
+            emoji: '🌈',
+            title: 'Imaginé par Ben, vibecodé par Claude',
+            text:
+                'Un projet perso pour les soirées entre amis. Dédicace à Fanch, '
+                'Khorven et Victor pour cette introduction aux 10 000 ! 🍻',
+          ),
         ),
+        if (ref.watch(trashModeProvider)) ...[
+          const SizedBox(height: 4),
+          const _TrashBanner(),
+        ],
         const SizedBox(height: 12),
         Center(
           child: Text('Version 1.0',
@@ -250,6 +274,98 @@ class _InfoScreenState extends State<InfoScreen> {
                   fontSize: 12)),
         ),
       ];
+
+  /// Compte les tapes sur la carte de dédicace et bascule le mode trash à la
+/// septième — avec un compte à rebours à partir de la quatrième, comme Android.
+  void _onDedicationTap() {
+    final active = ref.read(trashModeProvider);
+    _taps++;
+
+    if (_taps >= Taunts.unlockTaps) {
+      _taps = 0;
+      HapticFeedback.heavyImpact();
+      final nowActive = ref.read(trashModeProvider.notifier).toggle();
+      _announce(nowActive);
+      return;
+    }
+
+    final hint = Taunts.unlockHint(_taps, active: active);
+    if (hint == null) return;
+    HapticFeedback.selectionClick();
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text(hint),
+        duration: const Duration(milliseconds: 1200),
+      ));
+  }
+
+  /// L'écran de bascule, façon enseigne qui s'allume (ou qui s'éteint).
+  void _announce(bool active) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        final skin = TenkSkin.of(ctx);
+        return AlertDialog(
+          icon: Text(active ? '☠️' : '🌈', style: const TextStyle(fontSize: 44)),
+          title: Text(
+            active ? Taunts.unlockedTitle : Taunts.lockedTitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              letterSpacing: active ? 2 : 0,
+              color: active ? skin.neon : null,
+            ),
+          ),
+          content: Text(
+            active ? Taunts.unlockedBody : Taunts.lockedBody,
+            style: const TextStyle(height: 1.4),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(active ? 'Que le pire arrive' : 'Très bien'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+}
+
+/// Bandeau qui rappelle, dans « À propos », que le mode trash est actif et
+/// comment s'en débarrasser.
+class _TrashBanner extends StatelessWidget {
+  const _TrashBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final skin = TenkSkin.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: skin.neon.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(skin.corner),
+        border: Border.all(color: skin.neon.withValues(alpha: 0.7), width: 2),
+      ),
+      child: Row(
+        children: [
+          const Text('☠️', style: TextStyle(fontSize: 22)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              '${Taunts.activeBanner}\nRetape 7 fois la carte ci-dessus pour '
+              'revenir à la version polie.',
+              style: const TextStyle(
+                  fontSize: 13, height: 1.35, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _SectionTitle extends StatelessWidget {

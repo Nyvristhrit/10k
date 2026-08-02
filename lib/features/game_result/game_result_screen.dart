@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/theme/tenk_skin.dart';
 import '../../application/providers/app_providers.dart';
 import '../../domain/models/game_state.dart';
 import '../../domain/models/player.dart';
+import '../../domain/services/trash_targets.dart';
+import '../../shared/trash/trash_taunts.dart';
 import '../../shared/animations/confetti.dart';
 import '../../shared/animations/emoji_rain.dart';
 import '../../shared/animations/entrance.dart';
@@ -21,6 +24,26 @@ class GameResultScreen extends ConsumerStatefulWidget {
 }
 
 class _GameResultScreenState extends ConsumerState<GameResultScreen> {
+  // Les piques du mode trash sont tirées au sort **une seule fois** et
+  // conservées : sans ça, elles changeraient à chaque reconstruction de l'écran
+  // (arrivée des confettis, animations…), ce qui serait illisible.
+  String _winnerLine = '';
+  String? _loserLine;
+  bool _linesReady = false;
+
+  void _ensureTrashLines(GameState game, String? shamedId) {
+    if (_linesReady) return;
+    _linesReady = true;
+    final winner = game.winnerPlayerId == null
+        ? null
+        : game.playerById(game.winnerPlayerId!);
+    if (winner != null) _winnerLine = Taunts.winnerLine(winner.displayName);
+    final shamed = shamedId == null ? null : game.playerById(shamedId);
+    if (shamed != null) {
+      _loserLine = Taunts.loserLine(shamed.displayName, shamed.score);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -56,6 +79,9 @@ class _GameResultScreenState extends ConsumerState<GameResultScreen> {
   }
 
   Widget _content(BuildContext context, GameState game) {
+    final trash = TenkSkin.of(context).trash;
+    final shamedId = trash ? lastPlaceId(game) : null;
+    if (trash) _ensureTrashLines(game, shamedId);
     final ranking = [...game.players]
       ..sort((a, b) {
         final byScore = b.score.compareTo(a.score);
@@ -81,7 +107,7 @@ class _GameResultScreenState extends ConsumerState<GameResultScreen> {
               shaderCallback: (r) => const LinearGradient(
                 colors: [Color(0xFFFCD34D), Color(0xFFF59E0B)],
               ).createShader(r),
-              child: Text('VICTOIRE',
+              child: Text(trash ? Taunts.victoryTitle : 'VICTOIRE',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
@@ -101,6 +127,21 @@ class _GameResultScreenState extends ConsumerState<GameResultScreen> {
                   style: const TextStyle(
                       fontSize: 28, fontWeight: FontWeight.w900)),
             ),
+            if (trash)
+              Entrance(
+                delay: const Duration(milliseconds: 380),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Text(
+                    _winnerLine,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontStyle: FontStyle.italic,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  ),
+                ),
+              ),
             Entrance(
               delay: const Duration(milliseconds: 340),
               child: TweenAnimationBuilder<double>(
@@ -122,10 +163,26 @@ class _GameResultScreenState extends ConsumerState<GameResultScreen> {
               itemBuilder: (_, i) => Entrance(
                 delay: Duration(milliseconds: 440 + i * 90),
                 offset: const Offset(0, 18),
-                child: _row(i + 1, ranking[i]),
+                child: _row(i + 1, ranking[i], trash, shamedId),
               ),
             ),
           ),
+          if (trash && _loserLine != null) ...[
+            Entrance(
+              delay: const Duration(milliseconds: 520),
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 12, top: 4),
+                child: Text(
+                  _loserLine!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                ),
+              ),
+            ),
+          ],
           Entrance(
             delay: const Duration(milliseconds: 500),
             child: FilledButton(
@@ -145,7 +202,7 @@ class _GameResultScreenState extends ConsumerState<GameResultScreen> {
     );
   }
 
-  Widget _row(int rank, Player player) {
+  Widget _row(int rank, Player player, bool trash, String? shamedId) {
     final token = colorFor(player);
     return Container(
       decoration: BoxDecoration(
@@ -161,7 +218,8 @@ class _GameResultScreenState extends ConsumerState<GameResultScreen> {
                   fontWeight: FontWeight.w900,
                   fontSize: 18)),
           const SizedBox(width: 14),
-          Text(emojiFor(player), style: const TextStyle(fontSize: 22)),
+          Text(emojiInGame(player, trash: trash, shamedId: shamedId),
+              style: const TextStyle(fontSize: 22)),
           const SizedBox(width: 10),
           Expanded(
             child: Text(player.displayName,

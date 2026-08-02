@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../app/theme/app_theme.dart';
+import '../../app/theme/tenk_skin.dart';
 import '../../domain/models/game_state.dart';
 import '../../domain/services/encounter_summary.dart';
+import '../../shared/trash/trash_taunts.dart';
 import '../../shared/widgets/player_visuals.dart';
 
 /// Titre d'une rencontre selon le nombre de joueurs percutés (même vocabulaire
-/// que l'animation : pluie / cascade / tsunami).
-String encounterTitle(int count) {
+/// que l'animation : pluie / cascade / tsunami). Le mode trash a le sien, nettement
+/// moins délicat.
+String encounterTitle(int count, {bool trash = false}) {
+  if (trash) return Taunts.encounterTitle(count);
   if (count >= 4) return 'Tsunami de points !';
   if (count == 3) return 'Cascade de points !';
   if (count == 2) return 'Pluie de points !';
@@ -24,22 +28,32 @@ Future<void> showEncounterAlert(
   required EncounterSummary summary,
 }) {
   HapticFeedback.heavyImpact();
+  final jibe = Taunts.encounterJibe(summary.count);
   return showDialog<void>(
     context: context,
     barrierColor: Colors.black.withValues(alpha: 0.72),
-    builder: (_) => _EncounterAlertDialog(state: state, summary: summary),
+    builder: (_) =>
+        _EncounterAlertDialog(state: state, summary: summary, jibe: jibe),
   );
 }
 
 class _EncounterAlertDialog extends StatelessWidget {
-  const _EncounterAlertDialog({required this.state, required this.summary});
+  const _EncounterAlertDialog({
+    required this.state,
+    required this.summary,
+    required this.jibe,
+  });
 
   final GameState state;
   final EncounterSummary summary;
 
+  /// La petite pique du mode trash, tirée à l'ouverture pour rester stable.
+  final String jibe;
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final trash = TenkSkin.of(context).trash;
     final marker = state.playerById(summary.markerId);
 
     return Dialog(
@@ -56,10 +70,10 @@ class _EncounterAlertDialog extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('💥', style: TextStyle(fontSize: 46)),
+              Text(trash ? '☠️' : '💥', style: const TextStyle(fontSize: 46)),
               const SizedBox(height: 6),
               Text(
-                encounterTitle(summary.count),
+                encounterTitle(summary.count, trash: trash),
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900),
               ),
@@ -71,6 +85,17 @@ class _EncounterAlertDialog extends StatelessWidget {
                   style: TextStyle(
                       fontSize: 15, color: scheme.onSurfaceVariant),
                 ),
+              if (trash) ...[
+                const SizedBox(height: 8),
+                Text(
+                  jibe,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontStyle: FontStyle.italic,
+                      color: scheme.onSurfaceVariant),
+                ),
+              ],
               const SizedBox(height: 18),
               for (final v in summary.victims) _victimRow(context, v),
               const SizedBox(height: 18),
@@ -80,9 +105,9 @@ class _EncounterAlertDialog extends StatelessWidget {
                   style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(54)),
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('OK, compris',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                  child: Text(trash ? Taunts.encounterAck : 'OK, compris',
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w800)),
                 ),
               ),
             ],

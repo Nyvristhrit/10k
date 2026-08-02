@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -11,9 +12,13 @@ import 'package:flutter/scheduler.dart';
 /// indépendamment, et repart toujours hors écran (au-dessus) — il n'y a donc
 /// aucun « saut » visible quand un dé recommence sa chute.
 class FallingDice extends StatefulWidget {
-  const FallingDice({this.count = 16, super.key});
+  const FallingDice({this.count = 16, this.emojis = const ['🎲'], super.key});
 
   final int count;
+
+  /// Les emojis piochés à tour de rôle pour peupler la pluie. Un seul dé par
+  /// défaut ; le mode trash en envoie toute une ménagerie.
+  final List<String> emojis;
 
   @override
   State<FallingDice> createState() => _FallingDiceState();
@@ -23,7 +28,7 @@ class _FallingDiceState extends State<FallingDice>
     with SingleTickerProviderStateMixin {
   final ValueNotifier<double> _seconds = ValueNotifier<double>(0);
   late final Ticker _ticker;
-  late final List<_Die> _dice = _build();
+  late List<_Die> _dice = _build();
 
   @override
   void initState() {
@@ -36,10 +41,12 @@ class _FallingDiceState extends State<FallingDice>
 
   List<_Die> _build() {
     final rnd = Random(11);
+    final emojis = widget.emojis.isEmpty ? const ['🎲'] : widget.emojis;
     return List.generate(widget.count, (i) {
       final size = 26 + rnd.nextDouble() * 44;
       final painter = TextPainter(
-        text: TextSpan(text: '🎲', style: TextStyle(fontSize: size)),
+        text: TextSpan(
+            text: emojis[i % emojis.length], style: TextStyle(fontSize: size)),
         textDirection: TextDirection.ltr,
       )..layout();
       return _Die(
@@ -54,6 +61,16 @@ class _FallingDiceState extends State<FallingDice>
         painter: painter,
       );
     });
+  }
+
+  @override
+  void didUpdateWidget(covariant FallingDice old) {
+    super.didUpdateWidget(old);
+    // Le jeu d'emojis change quand on bascule en mode trash : on reconstruit la
+    // pluie (les TextPainter sont figés à la création).
+    if (!listEquals(old.emojis, widget.emojis) || old.count != widget.count) {
+      _dice = _build();
+    }
   }
 
   @override

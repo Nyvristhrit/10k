@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/theme/tenk_skin.dart';
 import '../../application/providers/app_providers.dart';
 import '../../domain/errors/game_rule_violation.dart';
 import '../../domain/models/game_rules.dart';
 import '../../domain/models/player.dart';
 import '../../domain/services/encounter_summary.dart';
 import '../../domain/services/game_transition.dart';
+import '../../domain/services/trash_targets.dart';
+import '../../shared/trash/trash_taunts.dart';
 import '../../shared/widgets/player_visuals.dart';
 import '../game_board/encounter_alert.dart';
 import '../game_board/game_actions.dart';
@@ -140,21 +143,25 @@ class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
 
   Future<void> _confirmOvershoot() async {
     final total = player.score + _amount;
+    final trash = TenkSkin.of(context).trash;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Dépassement'),
-        content: Text(
-            'Ce score ferait monter ${player.displayName} à $total points.\n'
-            'Dépasser ${rules.targetScore} compte comme un échec, et le score '
-            'ne sera pas enregistré.'),
+        title: Text(trash ? Taunts.overshootTitle : 'Dépassement'),
+        content: Text(trash
+            ? Taunts.overshootBody(
+                player.displayName, total, rules.targetScore)
+            : 'Ce score ferait monter ${player.displayName} à $total points.\n'
+                'Dépasser ${rules.targetScore} compte comme un échec, et le '
+                'score ne sera pas enregistré.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Corriger')),
+              child: Text(trash ? Taunts.overshootCancel : 'Corriger')),
           FilledButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Confirmer l\'échec')),
+              child:
+                  Text(trash ? Taunts.overshootAccept : 'Confirmer l\'échec')),
         ],
       ),
     );
@@ -170,6 +177,9 @@ class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
     final color = colorFor(player);
     final accent = Color(color.accentArgb ?? color.backgroundArgb);
     final scheme = Theme.of(context).colorScheme;
+    final trash = TenkSkin.of(context).trash;
+    final game = ref.watch(gameControllerProvider).value;
+    final shamedId = trash && game != null ? lastPlaceId(game) : null;
 
     // Coupures affichées : la plus grosse en haut pour taper vite.
     final steps = <int>[1000, 500, 100, if (rules.scoreStep == 50) 50];
@@ -190,7 +200,9 @@ class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
             children: [
               Row(
                 children: [
-                  Text(emojiFor(player), style: const TextStyle(fontSize: 34)),
+                  Text(
+                      emojiInGame(player, trash: trash, shamedId: shamedId),
+                      style: const TextStyle(fontSize: 34)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text('${player.displayName} — score du tour',

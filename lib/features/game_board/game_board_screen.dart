@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/theme/tenk_skin.dart';
 import '../../application/providers/app_providers.dart';
 import '../../domain/enums/game_enums.dart';
 import '../../domain/models/game_state.dart';
 import '../../domain/models/player.dart';
 import '../../domain/services/game_transition.dart';
+import '../../domain/services/trash_targets.dart';
+import '../../shared/trash/trash_taunts.dart';
 import '../../shared/turn_phrases.dart';
 import '../../shared/widgets/app_background.dart';
 import '../game_result/game_result_screen.dart';
@@ -25,6 +28,7 @@ class GameBoardScreen extends ConsumerStatefulWidget {
 class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
   final TurnPhrases _phrases = TurnPhrases();
   String? _phraseForId;
+  bool? _phraseTrash;
   String _phrase = '';
   bool _resultShown = false;
 
@@ -105,13 +109,16 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
   Widget _body(BuildContext context, GameState game) {
     final players = game.activePlayers;
     final currentId = _currentAllowedId(game);
+    final trash = TenkSkin.of(context).trash;
+    // Le bonnet d'âne du mode trash : le bon dernier perd son totem.
+    final shamedId = trash ? lastPlaceId(game) : null;
 
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
           child: Text(
-            _bannerText(game, currentId),
+            _bannerText(game, currentId, trash),
             textAlign: TextAlign.center,
             style: Theme.of(context)
                 .textTheme
@@ -122,7 +129,7 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-            child: _playerGrid(context, game, players, currentId),
+            child: _playerGrid(context, game, players, currentId, shamedId),
           ),
         ),
         _bottomBar(context, game, currentId),
@@ -138,7 +145,7 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
   /// tuile « orpheline » toute en largeur en bas. À 2-4 joueurs, on garde les
   /// gros blocs fixes (plus lisibles, et ils ne bougent pas d'un tour à l'autre).
   Widget _playerGrid(BuildContext context, GameState game,
-      List<Player> players, String? currentId) {
+      List<Player> players, String? currentId, String? shamedId) {
     final n = players.length;
     final hasActive =
         currentId != null && players.any((p) => p.id == currentId);
@@ -155,26 +162,28 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
             flex: 5,
             child: Padding(
               padding: const EdgeInsets.all(6),
-              child: _tile(context, game, active, currentId, compact: false),
+              child: _tile(context, game, active, currentId, shamedId,
+                  compact: false),
             ),
           ),
           Expanded(
               flex: 7,
-              child: _grid(context, game, rest, currentId, cols: restCols)),
+              child: _grid(context, game, rest, currentId, shamedId,
+                  cols: restCols)),
         ],
       );
     }
     // Une seule colonne jusqu'à 4 joueurs (50 %, 33 %, 25 %…), deux colonnes de
     // 5 à 8, trois au-delà.
     final cols = n <= 4 ? 1 : (n <= 8 ? 2 : 3);
-    return _grid(context, game, players, currentId, cols: cols);
+    return _grid(context, game, players, currentId, shamedId, cols: cols);
   }
 
   /// Grille « plein écran » avec un nombre de colonnes donné. Chaque rangée se
   /// partage la hauteur à parts égales ; les tuiles d'une rangée se partagent la
   /// largeur.
   Widget _grid(BuildContext context, GameState game, List<Player> players,
-      String? currentId,
+      String? currentId, String? shamedId,
       {required int cols}) {
     final n = players.length;
     final rows = (n / cols).ceil();
@@ -193,7 +202,7 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
                       child: Padding(
                         padding: const EdgeInsets.all(6),
                         child: _tile(context, game, players[r * cols + c],
-                            currentId,
+                            currentId, shamedId,
                             compact: compact),
                       ),
                     ),
@@ -207,7 +216,8 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
   /// Construit une tuile de joueur. La clé globale stable permet à Flutter de
   /// « suivre » (déplacer) la tuile quand elle passe de la grille à la vedette,
   /// sans la recréer : le score continue de s'animer et le halo reste intact.
-  Widget _tile(BuildContext context, GameState game, Player p, String? currentId,
+  Widget _tile(BuildContext context, GameState game, Player p,
+      String? currentId, String? shamedId,
       {required bool compact}) {
     // Pendant l'alerte de rencontre, on affiche l'ancien total figé ; à la
     // fermeture, le gel est levé et le compteur rejoint la vraie valeur.
@@ -219,12 +229,14 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
       maxLives: game.rules.maxLives,
       compact: compact,
       overrideScore: overrideScore,
+      shamed: p.id == shamedId,
       onTap: () => _onTapTile(context, game, p),
       onLongPress: () => _confirmLeave(context, p),
     );
   }
 
   Widget _bottomBar(BuildContext context, GameState game, String? currentId) {
+    final trash = TenkSkin.of(context).trash;
     final guided = game.rules.turnMode == TurnMode.guided;
     final current = currentId == null ? null : game.playerById(currentId);
     return SafeArea(
@@ -249,7 +261,7 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
                 else
                   Expanded(
                     child: Text(
-                      'Touche une tuile pour jouer',
+                      trash ? Taunts.freeModeHint : 'Touche une tuile pour jouer',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurfaceVariant),
@@ -259,7 +271,9 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Appui long sur un joueur pour le faire quitter la partie',
+              trash
+                  ? Taunts.leaveHint
+                  : 'Appui long sur un joueur pour le faire quitter la partie',
               textAlign: TextAlign.center,
               style: TextStyle(
                   color: Theme.of(context)
@@ -334,9 +348,12 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
         await ref.read(gameControllerProvider.notifier).selectPlayer(player.id);
       }
     } else if (context.mounted) {
+      final trash = TenkSkin.of(context).trash;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('${player.displayName} a déjà joué son tour.')),
+            content: Text(trash
+                ? Taunts.alreadyPlayed(player.displayName)
+                : '${player.displayName} a déjà joué son tour.')),
       );
     }
   }
@@ -373,7 +390,7 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
     }
   }
 
-  String _bannerText(GameState game, String? currentId) {
+  String _bannerText(GameState game, String? currentId, bool trash) {
     if (game.status == GameStatus.finalChance) {
       final fc = game.finalChanceState!;
       final remaining = fc.pendingPlayerIds.length;
@@ -381,18 +398,23 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
           ? null
           : game.playerById(fc.currentPlayerId!);
       if (current != null) {
-        return 'Dernière chance — ${current.displayName} ($remaining à jouer)';
+        return trash
+            ? 'Dernière chance de ${current.displayName} ($remaining derrière)'
+            : 'Dernière chance — ${current.displayName} ($remaining à jouer)';
       }
-      return 'Dernière chance !';
+      return trash ? 'Dernière chance. Ou pas.' : 'Dernière chance !';
     }
     if (game.rules.turnMode != TurnMode.guided) {
-      return 'Touche la tuile d\'un joueur pour saisir son score.';
+      return trash
+          ? Taunts.freeModeHint
+          : 'Touche la tuile d\'un joueur pour saisir son score.';
     }
     final current = currentId == null ? null : game.playerById(currentId);
-    if (current == null) return 'À vous de jouer';
-    if (_phraseForId != current.id) {
+    if (current == null) return trash ? 'Alors, on joue ?' : 'À vous de jouer';
+    if (_phraseForId != current.id || _phraseTrash != trash) {
       _phraseForId = current.id;
-      _phrase = _phrases.forName(current.displayName);
+      _phraseTrash = trash;
+      _phrase = _phrases.forName(current.displayName, trash: trash);
     }
     return _phrase;
   }

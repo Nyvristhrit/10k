@@ -1,14 +1,19 @@
 import 'dart:math';
 
+import 'trash/trash_taunts.dart';
+
 /// Banque de phrases du joueur actif (Annexe B).
 ///
 /// `{name}` est remplacé par le nom affiché. On évite de répéter deux fois de
-/// suite la même phrase.
+/// suite la même phrase. Deux registres cohabitent : le ton **normal**
+/// (encourageant) et le ton **trash** (voir [Taunts]), chacun avec sa propre
+/// mémoire de la dernière phrase tirée.
 class TurnPhrases {
   TurnPhrases({Random? random}) : _random = random ?? Random();
 
   final Random _random;
-  int _lastIndex = -1;
+  int _lastNormal = -1;
+  int _lastTrash = -1;
 
   static const List<String> _templates = [
     '{name}, à toi de jouer !',
@@ -27,12 +32,21 @@ class TurnPhrases {
     '{name}, fais monter le score !',
   ];
 
-  String forName(String name) {
-    var index = _random.nextInt(_templates.length);
-    if (_templates.length > 1 && index == _lastIndex) {
-      index = (index + 1) % _templates.length;
+  /// Une phrase pour [name]. En mode [trash], on pioche dans la banque de
+  /// piques plutôt que dans les encouragements.
+  String forName(String name, {bool trash = false}) {
+    final bank = trash ? Taunts.turnPhrases : _templates;
+    final last = trash ? _lastTrash : _lastNormal;
+
+    var index = _random.nextInt(bank.length);
+    if (bank.length > 1 && index == last) {
+      index = (index + 1) % bank.length;
     }
-    _lastIndex = index;
-    return _templates[index].replaceAll('{name}', name);
+    if (trash) {
+      _lastTrash = index;
+    } else {
+      _lastNormal = index;
+    }
+    return bank[index].replaceAll('{name}', name);
   }
 }

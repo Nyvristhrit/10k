@@ -1,15 +1,15 @@
 import 'dart:math';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/theme/app_theme.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../domain/models/game_state.dart';
 import '../../domain/repositories/game_repository.dart';
 import '../../domain/services/game_engine.dart';
 import '../controllers/game_controller.dart';
 import '../controllers/theme_controller.dart';
+import '../controllers/trash_controller.dart';
 
 /// Dépôt de persistance. Surchargé dans `main()` avec l'implémentation fichier
 /// branchée sur le dossier de documents de l'appareil.
@@ -28,13 +28,17 @@ final settingsRepositoryProvider = Provider<SettingsRepository>(
 final themeModeProvider =
     NotifierProvider<ThemeModeController, ThemeMode>(ThemeModeController.new);
 
-/// Couleur d'accent de l'UI, tirée au hasard **à chaque ouverture** de l'appli
-/// (le provider n'est créé qu'une fois par lancement). Petit détail ludique et
-/// multicolore ; volontairement pas mémorisé pour changer à chaque fois.
-final accentSeedProvider = Provider<Color>((ref) {
-  final seeds = AppTheme.accentSeeds;
-  return seeds[Random().nextInt(seeds.length)];
-});
+/// Mode trash : habillage néon et commentaires acides. Déblocable en secret
+/// depuis l'écran « À propos », et mémorisé entre les sessions.
+final trashModeProvider =
+    NotifierProvider<TrashModeController, bool>(TrashModeController.new);
+
+/// Rang de la teinte d'accent de l'UI, tiré au hasard **à chaque ouverture** de
+/// l'appli (le provider n'est créé qu'une fois par lancement). Petit détail
+/// ludique et multicolore ; volontairement pas mémorisé pour changer à chaque
+/// fois. C'est un *indice* et non une couleur : la palette dans laquelle on
+/// pioche dépend de l'habillage (sage ou trash), les deux ayant la même taille.
+final accentSeedIndexProvider = Provider<int>((ref) => Random().nextInt(1 << 20));
 
 /// Moteur de jeu (logique pure).
 final gameEngineProvider = Provider<GameEngine>((ref) => GameEngine());

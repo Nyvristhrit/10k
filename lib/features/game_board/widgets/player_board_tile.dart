@@ -2,8 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/tenk_skin.dart';
 import '../../../domain/models/player.dart';
 import '../../../shared/animations/count_up_text.dart';
+import '../../../shared/trash/trash_taunts.dart';
 import '../../../shared/widgets/player_visuals.dart';
 
 /// Tuile d'un joueur sur le plateau (§8.1), avec dégradé, ombre colorée et,
@@ -17,6 +19,7 @@ class PlayerBoardTile extends StatefulWidget {
     this.maxLives = 3,
     this.compact = false,
     this.overrideScore,
+    this.shamed = false,
     super.key,
   });
 
@@ -26,6 +29,10 @@ class PlayerBoardTile extends StatefulWidget {
   final VoidCallback? onLongPress;
   final int maxLives;
   final bool compact;
+
+  /// Bonnet d'âne du mode trash : ce joueur est bon dernier, son totem est
+  /// remplacé par un 💩 (calculé par le plateau, voir `lastPlaceId`).
+  final bool shamed;
 
   /// Score à afficher à la place du vrai total, le temps de l'alerte de
   /// rencontre (voir `frozenScoresProvider`). `null` = affiche le vrai score.
@@ -88,12 +95,16 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
 
   @override
   Widget build(BuildContext context) {
+    final skin = TenkSkin.of(context);
     final token = colorFor(widget.player);
     final base = Color(token.backgroundArgb);
     final accent = Color(token.accentArgb ?? token.backgroundArgb);
     final fg = Color(token.foregroundArgb);
     final player = widget.player;
     final last = player.lastActiveGain;
+    // Le rouge « dégât » vire au magenta d'enseigne sous néon.
+    final hitColor = skin.trash ? skin.neon : _hitRed;
+    final radius = skin.corner + 6;
 
     return AnimatedBuilder(
       animation: Listenable.merge([_glow, _hit]),
@@ -109,7 +120,7 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
         final baseBorderColor = widget.isActive
             ? Colors.white.withValues(alpha: 0.55 + 0.35 * t)
             : Colors.white.withValues(alpha: 0.06);
-        final borderColor = Color.lerp(baseBorderColor, _hitRed, hit)!;
+        final borderColor = Color.lerp(baseBorderColor, hitColor, hit)!;
         final borderWidth =
             (widget.isActive ? 2.5 : 1.0) + 1.5 * hit;
 
@@ -132,7 +143,7 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
                     end: Alignment.bottomRight,
                     colors: [_shift(base, 1.12), _shift(base, 0.82)],
                   ),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(radius),
                   border: Border.all(color: borderColor, width: borderWidth),
                   boxShadow: [
                     BoxShadow(
@@ -145,7 +156,7 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
                     // Halo rouge de dégât, superposé et fondu au repos.
                     if (hit > 0)
                       BoxShadow(
-                        color: _hitRed.withValues(alpha: 0.55 * hit),
+                        color: hitColor.withValues(alpha: 0.55 * hit),
                         blurRadius: 30 * hit,
                         spreadRadius: 2 * hit,
                       ),
@@ -164,7 +175,8 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
           children: [
             Row(
               children: [
-                Text(emojiFor(player),
+                Text(
+                    widget.shamed ? Taunts.shameEmoji : emojiFor(player),
                     style: TextStyle(fontSize: widget.compact ? 26 : 32)),
                 const SizedBox(width: 10),
                 Expanded(
@@ -177,10 +189,11 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                _Hearts(
+                _Lives(
                     lives: player.lives,
                     maxLives: widget.maxLives,
-                    compact: widget.compact),
+                    compact: widget.compact,
+                    skin: skin),
               ],
             ),
             Expanded(
@@ -218,19 +231,24 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
   }
 }
 
-/// Rangée de cœurs façon « conteneurs de vie » (Zelda) : une capsule sombre
-/// tient des cœurs rouges bien visibles. Quand un cœur est perdu, son intérieur
+/// Rangée de jauges de vie façon « conteneurs » (Zelda) : une capsule sombre
+/// tient les jauges bien visibles. Quand une vie est perdue, son intérieur
 /// tombe et s'efface, ne laissant que le contour vide.
-class _Hearts extends StatelessWidget {
-  const _Hearts({
+///
+/// L'icône vient de l'habillage : des cœurs rouges en temps normal, des flammes
+/// qui s'éteignent une à une en mode trash.
+class _Lives extends StatelessWidget {
+  const _Lives({
     required this.lives,
     required this.maxLives,
     required this.compact,
+    required this.skin,
   });
 
   final int lives;
   final int maxLives;
   final bool compact;
+  final TenkSkin skin;
 
   @override
   Widget build(BuildContext context) {
@@ -240,7 +258,7 @@ class _Hearts extends StatelessWidget {
           horizontal: compact ? 5 : 7, vertical: compact ? 3 : 4),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.28),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(skin.trash ? 4 : 14),
         border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
       ),
       child: Row(
@@ -248,7 +266,7 @@ class _Hearts extends StatelessWidget {
         children: List.generate(maxLives, (i) {
           return Padding(
             padding: EdgeInsets.only(left: i == 0 ? 0 : (compact ? 2 : 3)),
-            child: _Heart(filled: i < lives, size: size),
+            child: _LifeGauge(filled: i < lives, size: size, skin: skin),
           );
         }),
       ),
@@ -256,33 +274,37 @@ class _Hearts extends StatelessWidget {
   }
 }
 
-/// Un cœur : contour (conteneur) toujours visible, intérieur rouge par-dessus.
-/// À la perte, l'intérieur chute + s'efface via une petite animation.
-class _Heart extends StatefulWidget {
-  const _Heart({required this.filled, required this.size});
+/// Une jauge de vie : le contour (conteneur) est toujours visible, l'intérieur
+/// coloré se pose par-dessus. À la perte, l'intérieur chute et s'efface.
+class _LifeGauge extends StatefulWidget {
+  const _LifeGauge({
+    required this.filled,
+    required this.size,
+    required this.skin,
+  });
 
   final bool filled;
   final double size;
+  final TenkSkin skin;
 
   @override
-  State<_Heart> createState() => _HeartState();
+  State<_LifeGauge> createState() => _LifeGaugeState();
 }
 
-class _HeartState extends State<_Heart> with SingleTickerProviderStateMixin {
-  static const Color _red = Color(0xFFFF3B57);
-
+class _LifeGaugeState extends State<_LifeGauge>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _drop = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 620),
   );
 
   @override
-  void didUpdateWidget(covariant _Heart old) {
+  void didUpdateWidget(covariant _LifeGauge old) {
     super.didUpdateWidget(old);
     if (old.filled && !widget.filled) {
-      _drop.forward(from: 0); // cœur perdu → l'intérieur tombe
+      _drop.forward(from: 0); // vie perdue -> l'interieur tombe
     } else if (!old.filled && widget.filled) {
-      _drop.reset(); // cœur regagné (annulation) → réapparaît plein
+      _drop.reset(); // vie regagnee (annulation) -> reapparait pleine
     }
   }
 
@@ -295,6 +317,7 @@ class _HeartState extends State<_Heart> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final s = widget.size;
+    final skin = widget.skin;
     return SizedBox(
       width: s,
       height: s,
@@ -302,11 +325,12 @@ class _HeartState extends State<_Heart> with SingleTickerProviderStateMixin {
         clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
-          // Le conteneur (contour) : toujours là.
-          Icon(Icons.favorite, size: s, color: Colors.black.withValues(alpha: 0.35)),
-          Icon(Icons.favorite_border,
+          // Le conteneur (contour) : toujours la, meme vide.
+          Icon(skin.lifeIcon,
+              size: s, color: Colors.black.withValues(alpha: 0.35)),
+          Icon(skin.lifeIconOutline,
               size: s, color: Colors.white.withValues(alpha: 0.85)),
-          // L'intérieur rouge, qui tombe quand on perd le cœur.
+          // L'interieur, qui tombe quand on perd la vie.
           AnimatedBuilder(
             animation: _drop,
             builder: (context, child) {
@@ -327,7 +351,7 @@ class _HeartState extends State<_Heart> with SingleTickerProviderStateMixin {
                 ),
               );
             },
-            child: Icon(Icons.favorite, size: s * 0.82, color: _red),
+            child: Icon(skin.lifeIcon, size: s * 0.82, color: skin.lifeColor),
           ),
         ],
       ),
