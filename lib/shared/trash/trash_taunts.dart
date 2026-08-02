@@ -28,9 +28,6 @@ class Taunts {
   /// Emojis qui pleuvent en fond d'accueil (au lieu du seul dé).
   static const List<String> fallingEmojis = ['🎲', '💀', '🔥', '💩', '☠️', '🤡'];
 
-  /// Ce qui remplace les cœurs dans les jauges de vie.
-  static const String lifeEmoji = '💉';
-
   // ── Déblocage (compteur de tapes) ─────────────────────────────────────────
 
   /// Nombre de tapes sur la carte de dédicace pour basculer le mode.

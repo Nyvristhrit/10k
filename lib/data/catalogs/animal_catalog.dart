@@ -29,7 +29,7 @@ class AnimalCatalog {
     AnimalAvatar(id: 'lion', emoji: '🦁', defaultFrenchName: 'Lion', familyId: 'lion', species: ['Lion', 'Lionne', 'Lionceau', 'Lion d’Asie']),
     AnimalAvatar(id: 'tiger', emoji: '🐯', defaultFrenchName: 'Tigre', familyId: 'tiger', species: ['Tigre', 'Tigre blanc', 'Tigreau', 'Tigre du Bengale']),
     AnimalAvatar(id: 'leopard', emoji: '🐆', defaultFrenchName: 'Léopard', familyId: 'leopard', species: ['Léopard', 'Panthère', 'Jaguar', 'Guépard', 'Once']),
-    AnimalAvatar(id: 'horse', emoji: '🐴', defaultFrenchName: 'Poney', familyId: 'horse', species: ['Pur-sang', 'Poney', 'Mustang', 'Percheron', 'Arabe', 'Étalon']),
+    AnimalAvatar(id: 'horse', emoji: '🐴', defaultFrenchName: 'Poney', familyId: 'horse', species: ['Pur-sang', 'Poney', 'Mustang', 'Percheron', 'Étalon']),
     AnimalAvatar(id: 'unicorn', emoji: '🦄', defaultFrenchName: 'Licorne', familyId: 'unicorn', species: ['Licorne', 'Alicorne', 'Pégase']),
     AnimalAvatar(id: 'zebra', emoji: '🦓', defaultFrenchName: 'Zèbre', familyId: 'zebra', species: ['Zèbre', 'Zèbre de plaine', 'Zébrion']),
     AnimalAvatar(id: 'deer', emoji: '🦌', defaultFrenchName: 'Cerf', familyId: 'deer', species: ['Cerf', 'Biche', 'Faon', 'Chevreuil', 'Renne', 'Wapiti', 'Élan']),

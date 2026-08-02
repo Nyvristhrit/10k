@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme/app_theme.dart';
+import '../../app/theme/tenk_skin.dart';
 import '../../application/providers/app_providers.dart';
 import '../../domain/models/game_state.dart';
 import '../../domain/models/player.dart';
@@ -98,7 +99,7 @@ class GameSetupScreen extends ConsumerWidget {
       );
 
   Widget _playerRow(BuildContext context, WidgetRef ref, Player player) {
-    final color = colorFor(player);
+    final color = colorFor(player, trash: TenkSkin.of(context).trash);
     final bg = AppTheme.fromArgb(color.backgroundArgb);
     final fg = AppTheme.fromArgb(color.foregroundArgb);
 

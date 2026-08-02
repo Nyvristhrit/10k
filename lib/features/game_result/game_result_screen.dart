@@ -223,7 +223,7 @@ class _GameResultScreenState extends ConsumerState<GameResultScreen> {
   }
 
   Widget _row(int rank, Player player, bool trash, String? shamedId) {
-    final token = colorFor(player);
+    final token = colorFor(player, trash: trash);
     return Container(
       decoration: BoxDecoration(
         color: Color(token.backgroundArgb).withValues(alpha: 0.9),
@@ -434,7 +434,7 @@ class _WinnerBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final token = colorFor(winner);
+    final token = colorFor(winner, trash: TenkSkin.of(context).trash);
     final base = Color(token.backgroundArgb);
     final accent = Color(token.accentArgb ?? token.backgroundArgb);
     return Container(

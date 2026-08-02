@@ -97,7 +97,7 @@ class _EncounterAlertDialog extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 18),
-              for (final v in summary.victims) _victimRow(context, v),
+              for (final v in summary.victims) _victimRow(context, v, trash),
               const SizedBox(height: 18),
               SizedBox(
                 width: double.infinity,
@@ -117,10 +117,10 @@ class _EncounterAlertDialog extends StatelessWidget {
     );
   }
 
-  Widget _victimRow(BuildContext context, EncounterVictim v) {
+  Widget _victimRow(BuildContext context, EncounterVictim v, bool trash) {
     final victim = state.playerById(v.playerId);
     if (victim == null) return const SizedBox.shrink();
-    final color = colorFor(victim);
+    final color = colorFor(victim, trash: trash);
     final bg = AppTheme.fromArgb(color.backgroundArgb);
     final fg = AppTheme.fromArgb(color.foregroundArgb);
 

@@ -23,8 +23,11 @@ String emojiInGame(
         : emojiFor(player);
 
 /// Couleur de tuile d'un joueur (avec repli neutre).
-ColorToken colorFor(Player player) =>
-    ColorCatalog.byId(player.colorId) ??
+///
+/// En mode [trash], on pioche dans la palette acide : le joueur garde sa
+/// famille de couleur, mais en version néon.
+ColorToken colorFor(Player player, {bool trash = false}) =>
+    ColorCatalog.byId(player.colorId, toxicPalette: trash) ??
     const ColorToken(
       id: 'fallback',
       backgroundArgb: 0xFF455A64,

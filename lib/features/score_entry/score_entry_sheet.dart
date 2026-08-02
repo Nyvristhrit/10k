@@ -174,10 +174,10 @@ class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final color = colorFor(player);
+    final trash = TenkSkin.of(context).trash;
+    final color = colorFor(player, trash: trash);
     final accent = Color(color.accentArgb ?? color.backgroundArgb);
     final scheme = Theme.of(context).colorScheme;
-    final trash = TenkSkin.of(context).trash;
     final game = ref.watch(gameControllerProvider).value;
     final shamedId = trash && game != null ? lastPlaceId(game) : null;
 

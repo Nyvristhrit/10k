@@ -30,12 +30,36 @@ class ColorCatalog {
     ColorToken(id: 'slate', backgroundArgb: 0xFF475569, foregroundArgb: _white, accentArgb: 0xFF94A3B8),
   ];
 
+  /// La même palette, passée à l'acide pour le **mode trash**.
+  ///
+  /// Chaque teinte garde sa famille (le joueur bleu reste bleu, le rouge reste
+  /// rouge) mais bascule vers une version néon, plus saturée et volontairement
+  /// « toxique » — l'ambre devient chartreuse, le brun vire à l'olive
+  /// radioactive. Les identifiants sont **strictement les mêmes** : une partie
+  /// reprise garde ses joueurs, seule leur couleur change avec l'habillage.
+  static const List<ColorToken> toxic = [
+    ColorToken(id: 'cobalt', backgroundArgb: 0xFF1B4DFF, foregroundArgb: _white, accentArgb: 0xFF7BA0FF),
+    ColorToken(id: 'orange', backgroundArgb: 0xFFFF5A00, foregroundArgb: _white, accentArgb: 0xFFFFA13D),
+    ColorToken(id: 'forest', backgroundArgb: 0xFF00C24A, foregroundArgb: _white, accentArgb: 0xFF76FF03),
+    ColorToken(id: 'ruby', backgroundArgb: 0xFFFF0044, foregroundArgb: _white, accentArgb: 0xFFFF6B8E),
+    ColorToken(id: 'purple', backgroundArgb: 0xFF8A00FF, foregroundArgb: _white, accentArgb: 0xFFC77BFF),
+    ColorToken(id: 'teal', backgroundArgb: 0xFF00C2B2, foregroundArgb: _white, accentArgb: 0xFF3DFFEB),
+    ColorToken(id: 'raspberry', backgroundArgb: 0xFFFF00A0, foregroundArgb: _white, accentArgb: 0xFFFF6BCB),
+    ColorToken(id: 'amber', backgroundArgb: 0xFFD4E000, foregroundArgb: _ink, accentArgb: 0xFFF2FF4D),
+    ColorToken(id: 'indigo', backgroundArgb: 0xFF5B00FF, foregroundArgb: _white, accentArgb: 0xFF9D6BFF),
+    ColorToken(id: 'cyan', backgroundArgb: 0xFF00B8E6, foregroundArgb: _white, accentArgb: 0xFF5CE8FF),
+    ColorToken(id: 'brown', backgroundArgb: 0xFF6B8E00, foregroundArgb: _white, accentArgb: 0xFFB4FF00),
+    ColorToken(id: 'slate', backgroundArgb: 0xFF404A5C, foregroundArgb: _white, accentArgb: 0xFFA3FF3D),
+  ];
+
   /// Nombre de couleurs disponibles (= nombre max de joueurs).
   static int get count => all.length;
 
   /// Retrouve une couleur par son id (ou `null`).
-  static ColorToken? byId(String id) {
-    for (final c in all) {
+  ///
+  /// [toxicPalette] bascule sur la variante acide du mode trash.
+  static ColorToken? byId(String id, {bool toxicPalette = false}) {
+    for (final c in toxicPalette ? toxic : all) {
       if (c.id == id) return c;
     }
     return null;

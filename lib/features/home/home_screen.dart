@@ -122,7 +122,13 @@ class HomeScreen extends ConsumerWidget {
             // Le badge « TRASH » se pose en travers du logo, comme un
             // autocollant collé après coup : on empile donc les deux, en
             // laissant le badge déborder légèrement du cadre (`Clip.none`).
+            //
+            // `passthrough` est essentiel : sans lui, la pile relâcherait les
+            // contraintes et le `FittedBox` se contenterait de la taille
+            // naturelle du texte — le logo rapetissait. Ici, la largeur imposée
+            // traverse la pile telle quelle et le titre garde sa pleine taille.
             child: Stack(
+              fit: StackFit.passthrough,
               clipBehavior: Clip.none,
               children: [
                 FittedBox(

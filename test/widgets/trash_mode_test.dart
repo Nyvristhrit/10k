@@ -109,10 +109,11 @@ void main() {
     expect(find.text(Taunts.badge), findsOneWidget);
     expect(find.text(Taunts.tagline), findsOneWidget);
 
-    // Le thème porte bien l'habillage trash (fond néon, vies en seringues).
+    // Le thème porte bien l'habillage trash (fond néon, cœurs verts).
     final skin = TenkSkin.of(tester.element(find.text(Taunts.badge)));
     expect(skin.trash, isTrue);
-    expect(skin.lifeEmoji, Taunts.lifeEmoji);
+    expect(skin.lifeIcon, Icons.favorite);
+    expect(skin.lifeColor, isNot(TenkSkin.classic.lifeColor));
     // Les arrondis, eux, restent ceux de la DA d'origine.
     expect(skin.corner, TenkSkin.classic.corner);
   });

@@ -18,6 +18,9 @@ const List<Color> _classicStripes = [
   Color(0xFF8B5CF6), // violet
 ];
 
+/// Le vert « déchet radioactif » qui remplit les cœurs en mode trash.
+const Color _toxicGreen = Color(0xFF76FF03);
+
 /// Les mêmes, passées au néon : le logo en négatif du mode trash.
 const List<Color> _trashStripes = [
   Color(0xFFFF00A0), // magenta
@@ -41,7 +44,6 @@ class TenkSkin extends ThemeExtension<TenkSkin> {
     required this.lifeColor,
     required this.fallingEmojis,
     required this.corner,
-    this.lifeEmoji,
   });
 
   /// Le mode trash est-il actif ? Seul drapeau à consulter pour changer de ton.
@@ -57,15 +59,13 @@ class TenkSkin extends ThemeExtension<TenkSkin> {
   final Color neon;
   final Color neonAlt;
 
-  /// Icônes des jauges de vie : plein / vide (les cœurs d'origine).
+  /// Icônes des jauges de vie : plein / vide.
   final IconData lifeIcon;
   final IconData lifeIconOutline;
-  final Color lifeColor;
 
-  /// Emoji utilisé à la place des icônes pour les jauges de vie, s'il y en a un.
-  /// Le mode trash troque les cœurs contre des seringues : la jauge vide reste
-  /// visible en filigrane, la pleine tombe quand on la perd.
-  final String? lifeEmoji;
+  /// Couleur qui remplit le cœur : rouge sang à l'origine, vert toxique sous
+  /// néon (le même cœur, mais rempli d'autre chose).
+  final Color lifeColor;
 
   /// Emojis qui tombent en fond d'accueil.
   final List<String> fallingEmojis;
@@ -131,8 +131,7 @@ class TenkSkin extends ThemeExtension<TenkSkin> {
     neonAlt: Color(0xFF00F0FF),
     lifeIcon: Icons.favorite,
     lifeIconOutline: Icons.favorite_border,
-    lifeColor: Color(0xFFFF3B57),
-    lifeEmoji: Taunts.lifeEmoji,
+    lifeColor: _toxicGreen,
     fallingEmojis: Taunts.fallingEmojis,
     corner: 18,
   );
@@ -150,8 +149,7 @@ class TenkSkin extends ThemeExtension<TenkSkin> {
     neonAlt: Color(0xFF00B4C4),
     lifeIcon: Icons.favorite,
     lifeIconOutline: Icons.favorite_border,
-    lifeColor: Color(0xFFFF3B57),
-    lifeEmoji: Taunts.lifeEmoji,
+    lifeColor: _toxicGreen,
     fallingEmojis: Taunts.fallingEmojis,
     corner: 18,
   );
@@ -168,7 +166,6 @@ class TenkSkin extends ThemeExtension<TenkSkin> {
     Color? lifeColor,
     List<String>? fallingEmojis,
     double? corner,
-    String? lifeEmoji,
   }) {
     return TenkSkin(
       trash: trash ?? this.trash,
@@ -181,7 +178,6 @@ class TenkSkin extends ThemeExtension<TenkSkin> {
       lifeColor: lifeColor ?? this.lifeColor,
       fallingEmojis: fallingEmojis ?? this.fallingEmojis,
       corner: corner ?? this.corner,
-      lifeEmoji: lifeEmoji ?? this.lifeEmoji,
     );
   }
 
