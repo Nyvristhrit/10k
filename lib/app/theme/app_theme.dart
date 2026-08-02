@@ -152,12 +152,10 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           minimumSize: const Size.fromHeight(56),
-          textStyle: TextStyle(
+          textStyle: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
             fontFamily: fontFamily,
-            // Le trash respire le néon d'enseigne : lettres espacées, angles durs.
-            letterSpacing: skin.trash ? 1.2 : 0,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(skin.corner),

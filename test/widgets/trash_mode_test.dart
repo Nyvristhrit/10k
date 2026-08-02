@@ -109,10 +109,12 @@ void main() {
     expect(find.text(Taunts.badge), findsOneWidget);
     expect(find.text(Taunts.tagline), findsOneWidget);
 
-    // Le thème porte bien l'habillage trash (fond néon, jauges en flammes).
+    // Le thème porte bien l'habillage trash (fond néon, vies en seringues).
     final skin = TenkSkin.of(tester.element(find.text(Taunts.badge)));
     expect(skin.trash, isTrue);
-    expect(skin.lifeIcon, Icons.local_fire_department);
+    expect(skin.lifeEmoji, Taunts.lifeEmoji);
+    // Les arrondis, eux, restent ceux de la DA d'origine.
+    expect(skin.corner, TenkSkin.classic.corner);
   });
 
   testWidgets('sans déblocage, l\'accueil reste sage', (tester) async {

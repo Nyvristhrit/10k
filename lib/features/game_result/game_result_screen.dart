@@ -6,6 +6,7 @@ import '../../app/theme/tenk_skin.dart';
 import '../../application/providers/app_providers.dart';
 import '../../domain/models/game_state.dart';
 import '../../domain/models/player.dart';
+import '../../domain/services/game_facts.dart';
 import '../../domain/services/trash_targets.dart';
 import '../../shared/trash/trash_taunts.dart';
 import '../../shared/animations/confetti.dart';
@@ -81,6 +82,7 @@ class _GameResultScreenState extends ConsumerState<GameResultScreen> {
   Widget _content(BuildContext context, GameState game) {
     final trash = TenkSkin.of(context).trash;
     final shamedId = trash ? lastPlaceId(game) : null;
+    final facts = GameFacts.of(game);
     if (trash) _ensureTrashLines(game, shamedId);
     final ranking = [...game.players]
       ..sort((a, b) {
@@ -156,33 +158,51 @@ class _GameResultScreenState extends ConsumerState<GameResultScreen> {
             ),
           ],
           const SizedBox(height: 24),
+          // Classement, bilan et palmarès défilent ensemble : sinon, à 8 ou 12
+          // joueurs, le bas de l'écran se battrait pour quelques pixels.
           Expanded(
-            child: ListView.separated(
-              itemCount: ranking.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
-              itemBuilder: (_, i) => Entrance(
-                delay: Duration(milliseconds: 440 + i * 90),
-                offset: const Offset(0, 18),
-                child: _row(i + 1, ranking[i], trash, shamedId),
-              ),
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                for (var i = 0; i < ranking.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Entrance(
+                      delay: Duration(milliseconds: 440 + i * 90),
+                      offset: const Offset(0, 18),
+                      child: _row(i + 1, ranking[i], trash, shamedId),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                Entrance(
+                  delay: const Duration(milliseconds: 520),
+                  child: _TallySheet(facts: facts),
+                ),
+                if (trash && _loserLine != null)
+                  Entrance(
+                    delay: const Duration(milliseconds: 560),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 14),
+                      child: Text(
+                        _loserLine!,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant),
+                      ),
+                    ),
+                  ),
+                if (trash && facts.hasHighlights)
+                  Entrance(
+                    delay: const Duration(milliseconds: 600),
+                    child: _HallOfShame(facts: facts, game: game),
+                  ),
+                const SizedBox(height: 12),
+              ],
             ),
           ),
-          if (trash && _loserLine != null) ...[
-            Entrance(
-              delay: const Duration(milliseconds: 520),
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 12, top: 4),
-                child: Text(
-                  _loserLine!,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
-                ),
-              ),
-            ),
-          ],
           Entrance(
             delay: const Duration(milliseconds: 500),
             child: FilledButton(
@@ -245,6 +265,163 @@ class _GameResultScreenState extends ConsumerState<GameResultScreen> {
     navigator.pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const GameSetupScreen()),
       (route) => route.isFirst,
+    );
+  }
+}
+
+/// Le bilan de la partie : combien de manches et de tours il aura fallu.
+/// Affiché dans les deux modes — c'est une info de jeu, pas une pique.
+class _TallySheet extends StatelessWidget {
+  const _TallySheet({required this.facts});
+
+  final GameFacts facts;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final skin = TenkSkin.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(skin.corner),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Le mode libre ne compte pas de manches : on n'affiche alors que les
+          // tours, plutôt qu'un « 0 manches » trompeur.
+          if (facts.roundsPlayed > 0)
+            _Tally(
+                emoji: '🔁',
+                value: '${facts.roundsPlayed}',
+                label: facts.roundsPlayed > 1 ? 'manches' : 'manche'),
+          _Tally(
+              emoji: '🎲',
+              value: '${facts.turnsPlayed}',
+              label: facts.turnsPlayed > 1 ? 'tours joués' : 'tour joué'),
+        ],
+      ),
+    );
+  }
+}
+
+class _Tally extends StatelessWidget {
+  const _Tally({required this.emoji, required this.value, required this.label});
+
+  final String emoji;
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 20)),
+        const SizedBox(height: 2),
+        Text(value,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+        Text(label,
+            style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+      ],
+    );
+  }
+}
+
+/// Le palmarès de la honte : les titres décernés en fin de partie (mode trash).
+///
+/// Chaque titre n'apparaît que s'il a un vainqueur incontesté — un « gros
+/// naze » ex æquo, ça n'amuse personne.
+class _HallOfShame extends StatelessWidget {
+  const _HallOfShame({required this.facts, required this.game});
+
+  final GameFacts facts;
+  final GameState game;
+
+  @override
+  Widget build(BuildContext context) {
+    final skin = TenkSkin.of(context);
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+      decoration: BoxDecoration(
+        color: skin.neon.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(skin.corner),
+        border: Border.all(color: skin.neon.withValues(alpha: 0.55), width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            Taunts.factsTitle,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 2,
+              color: skin.neon,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _line(context, facts.biggestLoser, Taunts.factLoser),
+          _line(context, facts.wrecker, Taunts.factWrecker),
+          _line(context, facts.biggestHit, Taunts.factHit),
+          _line(context, facts.mostMisses, Taunts.factMisses),
+          const SizedBox(height: 4),
+          Text(
+            'Rien de personnel. Enfin, un peu.',
+            style: TextStyle(
+                fontSize: 11,
+                fontStyle: FontStyle.italic,
+                color: scheme.onSurfaceVariant.withValues(alpha: 0.8)),
+          ),
+          const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
+
+  Widget _line(
+    BuildContext context,
+    PlayerFact? fact,
+    ({String emoji, String title, String line}) copy,
+  ) {
+    if (fact == null) return const SizedBox.shrink();
+    final player = game.playerById(fact.playerId);
+    if (player == null) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(copy.emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(copy.title,
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w900)),
+                Text(
+                  Taunts.fact(copy.line, player.displayName, fact.value),
+                  style: TextStyle(
+                      fontSize: 13,
+                      height: 1.3,
+                      color: scheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

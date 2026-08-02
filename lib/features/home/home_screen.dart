@@ -119,30 +119,43 @@ class HomeScreen extends ConsumerWidget {
           delay: const Duration(milliseconds: 220),
           child: FractionallySizedBox(
             widthFactor: 0.585,
-            child: FittedBox(
-              fit: BoxFit.fitWidth,
-              // On peint le dégradé DIRECTEMENT dans les lettres (via
-              // `foreground`) plutôt qu'avec un ShaderMask par-dessus un texte
-              // blanc : ainsi il n'y a plus de blanc dessous qui « perce » au
-              // bout du 1 et du K en mode sombre. Les stries viennent de
-              // l'habillage : arc-en-ciel d'origine, ou néon en mode trash.
-              child: Text('10K',
-                  style: TextStyle(
-                    fontSize: 120,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0,
-                    height: 1.0,
-                    foreground: Paint()
-                      ..shader = _stripeShader(skin.titleStripes),
-                  )),
+            // Le badge « TRASH » se pose en travers du logo, comme un
+            // autocollant collé après coup : on empile donc les deux, en
+            // laissant le badge déborder légèrement du cadre (`Clip.none`).
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                FittedBox(
+                  fit: BoxFit.fitWidth,
+                  // On peint le dégradé DIRECTEMENT dans les lettres (via
+                  // `foreground`) plutôt qu'avec un ShaderMask par-dessus un
+                  // texte blanc : ainsi il n'y a plus de blanc dessous qui
+                  // « perce » au bout du 1 et du K en mode sombre. Les stries
+                  // viennent de l'habillage : arc-en-ciel d'origine, ou néon en
+                  // mode trash.
+                  child: Text('10K',
+                      style: TextStyle(
+                        fontSize: 120,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0,
+                        height: 1.0,
+                        foreground: Paint()
+                          ..shader = _stripeShader(skin.titleStripes),
+                      )),
+                ),
+                if (skin.trash)
+                  Positioned(
+                    right: -18,
+                    bottom: -10,
+                    child: Transform.rotate(
+                      angle: -0.16,
+                      child: const _TrashBadge(),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
-        if (skin.trash) ...[
-          const SizedBox(height: 6),
-          const Entrance(
-              delay: Duration(milliseconds: 300), child: _TrashBadge()),
-        ],
         const SizedBox(height: 8),
         Entrance(
           delay: const Duration(milliseconds: 340),
@@ -252,41 +265,44 @@ Shader _stripeShader(List<Color> stripes) {
   ).createShader(const Rect.fromLTWH(0, 0, 240, 120));
 }
 
-/// L'étiquette « TRASH » sous le logo : une enseigne au néon de travers, qui
-/// annonce clairement que l'appli a changé de camp.
+/// L'étiquette « TRASH », posée en travers du logo comme un autocollant.
+///
+/// Fond très sombre plutôt que teinté : le rose ressort alors franchement, au
+/// lieu de se mélanger au dégradé du logo derrière (ce qui virait au vert
+/// sale). La lueur reste **à l'extérieur** du badge, jamais dans le texte.
 class _TrashBadge extends StatelessWidget {
   const _TrashBadge();
+
+  /// Prune presque noir : lisible sur le logo en ambiance jour comme nuit.
+  static const Color _ink = Color(0xFF14001C);
 
   @override
   Widget build(BuildContext context) {
     final skin = TenkSkin.of(context);
-    return Transform.rotate(
-      angle: -0.045,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-        decoration: BoxDecoration(
-          color: skin.neon.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: skin.neon, width: 2),
-          boxShadow: [
-            BoxShadow(
-                color: skin.neon.withValues(alpha: 0.55),
-                blurRadius: 22,
-                spreadRadius: 1),
-          ],
-        ),
-        child: Text(
-          Taunts.badge,
-          style: TextStyle(
-            color: skin.neon,
-            fontSize: 26,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 8,
-            height: 1.1,
-            shadows: [
-              Shadow(color: skin.neonAlt.withValues(alpha: 0.9), blurRadius: 16),
-            ],
-          ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      decoration: BoxDecoration(
+        color: _ink,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: skin.neon, width: 2.5),
+        boxShadow: [
+          BoxShadow(
+              color: skin.neon.withValues(alpha: 0.55),
+              blurRadius: 20,
+              spreadRadius: 1),
+          // Une ombre portée franche décolle l'autocollant du logo.
+          const BoxShadow(
+              color: Color(0x99000000), blurRadius: 10, offset: Offset(0, 4)),
+        ],
+      ),
+      child: Text(
+        Taunts.badge,
+        style: TextStyle(
+          color: skin.neon,
+          fontSize: 22,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 5,
+          height: 1.15,
         ),
       ),
     );

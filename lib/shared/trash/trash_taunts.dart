@@ -28,6 +28,9 @@ class Taunts {
   /// Emojis qui pleuvent en fond d'accueil (au lieu du seul dé).
   static const List<String> fallingEmojis = ['🎲', '💀', '🔥', '💩', '☠️', '🤡'];
 
+  /// Ce qui remplace les cœurs dans les jauges de vie.
+  static const String lifeEmoji = '💉';
+
   // ── Déblocage (compteur de tapes) ─────────────────────────────────────────
 
   /// Nombre de tapes sur la carte de dédicace pour basculer le mode.
@@ -86,6 +89,20 @@ class Taunts {
     '{name}, souviens-toi : le but, c\'est de marquer des points.',
     'Tour de {name}. On note tout, tu sais.',
     'Fais rouler, {name}. Le ridicule ne tue pas. Vérifions.',
+    'Personne ne mise sur toi, {name}. Personne.',
+    '{name}, ton tour. Fais court, ce sera moins gênant.',
+    'On y croyait plus. {name} daigne jouer.',
+    '{name}, tu veux qu\'on t\'explique les règles encore une fois ?',
+    'Chers spectateurs, {name} va encore nous décevoir.',
+    'Ça va {name} ? Besoin d\'un coussin, d\'un plaid, d\'un talent ?',
+    '{name} entre en scène. La médiocrité aussi.',
+    'Bonne chance {name}. Tu vas en avoir besoin. Beaucoup.',
+    '{name}, les dés t\'ont vu arriver et ils ont soupiré.',
+    'Ton tour {name}. Essaie de faire mieux que ta vie.',
+    'Attention, {name} va jouer. Cachez les enfants.',
+    '{name}, même la table a pitié. C\'est dire.',
+    'Roule {name}. Et arrête de souffler sur les dés, ça marche pas.',
+    '{name}, le talent c\'est comme les points : tu en as pas.',
   ];
 
   /// Consigne du bas de plateau en mode libre.
@@ -215,4 +232,36 @@ class Taunts {
 
   /// Emoji qui remplace le totem du dernier au classement.
   static const String shameEmoji = '💩';
+
+  // ── Faits marquants (palmarès de fin de partie) ───────────────────────────
+
+  /// Titre de la section.
+  static const String factsTitle = 'LE PALMARÈS DE LA HONTE';
+
+  /// Libellés des faits. `{name}` et `{value}` sont remplis par l'écran de
+  /// résultat ; `title` est le titre décerné, `line` le commentaire.
+  static const factLoser = (
+    emoji: '💸',
+    title: 'Le gros naze',
+    line: '{name} a bradé {value} points en route.',
+  );
+  static const factWrecker = (
+    emoji: '💥',
+    title: 'La brute',
+    line: '{name} a fracassé {value} adversaires en tombant pile dessus.',
+  );
+  static const factHit = (
+    emoji: '🎯',
+    title: 'Le coup de bol',
+    line: '{name} a sorti {value} points d\'un coup. Un accident.',
+  );
+  static const factMisses = (
+    emoji: '🪦',
+    title: 'Le boulet',
+    line: '{name} a raté {value} tours. Un vrai métier.',
+  );
+
+  /// Remplit un libellé de fait.
+  static String fact(String template, String name, int value) =>
+      _fill(template, name).replaceAll('{value}', '$value');
 }

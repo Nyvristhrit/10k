@@ -258,7 +258,7 @@ class _Lives extends StatelessWidget {
           horizontal: compact ? 5 : 7, vertical: compact ? 3 : 4),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.28),
-        borderRadius: BorderRadius.circular(skin.trash ? 4 : 14),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
       ),
       child: Row(
@@ -318,6 +318,7 @@ class _LifeGaugeState extends State<_LifeGauge>
   Widget build(BuildContext context) {
     final s = widget.size;
     final skin = widget.skin;
+    final emoji = skin.lifeEmoji;
     return SizedBox(
       width: s,
       height: s,
@@ -325,11 +326,18 @@ class _LifeGaugeState extends State<_LifeGauge>
         clipBehavior: Clip.none,
         alignment: Alignment.center,
         children: [
-          // Le conteneur (contour) : toujours la, meme vide.
-          Icon(skin.lifeIcon,
-              size: s, color: Colors.black.withValues(alpha: 0.35)),
-          Icon(skin.lifeIconOutline,
-              size: s, color: Colors.white.withValues(alpha: 0.85)),
+          // Le conteneur (l'emplacement vide) : toujours là, même sans vie.
+          if (emoji != null)
+            Opacity(
+              opacity: 0.25,
+              child: Text(emoji, style: TextStyle(fontSize: s * 0.92)),
+            )
+          else ...[
+            Icon(skin.lifeIcon,
+                size: s, color: Colors.black.withValues(alpha: 0.35)),
+            Icon(skin.lifeIconOutline,
+                size: s, color: Colors.white.withValues(alpha: 0.85)),
+          ],
           // L'interieur, qui tombe quand on perd la vie.
           AnimatedBuilder(
             animation: _drop,
@@ -351,7 +359,9 @@ class _LifeGaugeState extends State<_LifeGauge>
                 ),
               );
             },
-            child: Icon(skin.lifeIcon, size: s * 0.82, color: skin.lifeColor),
+            child: emoji != null
+                ? Text(emoji, style: TextStyle(fontSize: s * 0.92))
+                : Icon(skin.lifeIcon, size: s * 0.82, color: skin.lifeColor),
           ),
         ],
       ),
