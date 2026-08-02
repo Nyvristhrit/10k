@@ -16,6 +16,7 @@ class PlayerBoardTile extends StatefulWidget {
     this.onLongPress,
     this.maxLives = 3,
     this.compact = false,
+    this.overrideScore,
     super.key,
   });
 
@@ -25,6 +26,13 @@ class PlayerBoardTile extends StatefulWidget {
   final VoidCallback? onLongPress;
   final int maxLives;
   final bool compact;
+
+  /// Score à afficher à la place du vrai total, le temps de l'alerte de
+  /// rencontre (voir `frozenScoresProvider`). `null` = affiche le vrai score.
+  final int? overrideScore;
+
+  /// Le total réellement affiché sur la tuile.
+  int get displayScore => overrideScore ?? player.score;
 
   @override
   State<PlayerBoardTile> createState() => _PlayerBoardTileState();
@@ -53,7 +61,10 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
   void didUpdateWidget(covariant PlayerBoardTile old) {
     super.didUpdateWidget(old);
     final lostLife = widget.player.lives < old.player.lives;
-    final lostPoints = widget.player.score < old.player.score;
+    // On se base sur le score AFFICHÉ : ainsi la secousse « touché » joue au
+    // moment où le compteur décroît réellement (à la levée du gel), pas pendant
+    // que l'alerte masque encore le plateau.
+    final lostPoints = widget.displayScore < old.displayScore;
     if (lostLife || lostPoints) {
       _hit.reverse(from: 1.0); // 1 → 0 : impact puis retour au calme
     }
@@ -177,7 +188,10 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
                 child: FittedBox(
                   fit: BoxFit.contain,
                   child: CountUpText(
-                    value: player.score,
+                    value: widget.displayScore,
+                    // Un peu plus lent que par défaut : on veut bien voir le
+                    // compteur grimper à la marque et décroître à la rencontre.
+                    duration: const Duration(milliseconds: 1100),
                     style: TextStyle(
                         color: fg,
                         fontSize: 96,

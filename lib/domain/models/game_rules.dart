@@ -16,8 +16,9 @@ class GameRules extends Equatable {
     this.turnMode = TurnMode.guided,
     this.confirmThirdMiss = true,
     this.encounterEnabled = true,
+    this.encounterAlertsEnabled = true,
     this.encounterAffectsAllMatches = true,
-    this.encounterChainsEnabled = false,
+    this.encounterChainsEnabled = true,
     this.overshootCountsAsMiss = true,
     this.finalChanceEnabled = true,
   });
@@ -46,10 +47,15 @@ class GameRules extends Equatable {
   /// La règle de rencontre est-elle active.
   final bool encounterEnabled;
 
+  /// Afficher un message à valider quand une rencontre (ou cascade) se produit,
+  /// pour ne pas la rater quand on est distrait. Activé par défaut.
+  final bool encounterAlertsEnabled;
+
   /// Une rencontre affecte-t-elle toutes les victimes à égalité (vs une seule).
   final bool encounterAffectsAllMatches;
 
-  /// Réaction en chaîne des rencontres. `false` en V0.2.
+  /// Réaction en chaîne des rencontres (une victime qui redescend peut à son
+  /// tour en percuter une autre). Activée par défaut.
   final bool encounterChainsEnabled;
 
   /// Un dépassement de la cible compte comme un échec.
@@ -67,6 +73,7 @@ class GameRules extends Equatable {
     TurnMode? turnMode,
     bool? confirmThirdMiss,
     bool? encounterEnabled,
+    bool? encounterAlertsEnabled,
     bool? encounterAffectsAllMatches,
     bool? encounterChainsEnabled,
     bool? overshootCountsAsMiss,
@@ -81,6 +88,8 @@ class GameRules extends Equatable {
       turnMode: turnMode ?? this.turnMode,
       confirmThirdMiss: confirmThirdMiss ?? this.confirmThirdMiss,
       encounterEnabled: encounterEnabled ?? this.encounterEnabled,
+      encounterAlertsEnabled:
+          encounterAlertsEnabled ?? this.encounterAlertsEnabled,
       encounterAffectsAllMatches:
           encounterAffectsAllMatches ?? this.encounterAffectsAllMatches,
       encounterChainsEnabled:
@@ -101,6 +110,7 @@ class GameRules extends Equatable {
         turnMode,
         confirmThirdMiss,
         encounterEnabled,
+        encounterAlertsEnabled,
         encounterAffectsAllMatches,
         encounterChainsEnabled,
         overshootCountsAsMiss,

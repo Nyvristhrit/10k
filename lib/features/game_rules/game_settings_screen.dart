@@ -141,6 +141,16 @@ class GameSettingsScreen extends ConsumerWidget {
               onChanged: (v) => update(rules.copyWith(encounterEnabled: v)),
             ),
             _SwitchTile(
+              label: 'Alerte de rencontre',
+              subtitle:
+                  'Afficher un message à valider quand une rencontre se produit, '
+                  'pour ne pas la manquer.',
+              value: rules.encounterAlertsEnabled,
+              enabled: !locked && rules.encounterEnabled,
+              onChanged: (v) =>
+                  update(rules.copyWith(encounterAlertsEnabled: v)),
+            ),
+            _SwitchTile(
               label: 'Dernière chance',
               subtitle:
                   'Quand un joueur gagne, les autres ont un dernier tour pour le rattraper.',

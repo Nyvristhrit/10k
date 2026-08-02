@@ -11,6 +11,7 @@ class AnimalAvatar extends Equatable {
     required this.emoji,
     required this.defaultFrenchName,
     required this.familyId,
+    this.species = const <String>[],
     this.unicodeVersion,
     this.fallbackEmoji,
     this.eligibleForRandomDraw = true,
@@ -27,6 +28,11 @@ class AnimalAvatar extends Equatable {
 
   /// Regroupe les variantes proches d'une même espèce (ex. tous les chats → `cat`).
   final String familyId;
+
+  /// Espèces concrètes et courtes possibles pour ce totem (ex. pour l'oiseau :
+  /// Bouvreuil, Mésange…). Le nom d'un joueur est tiré ici à sa création ; si la
+  /// liste est vide, on retombe sur [defaultFrenchName].
+  final List<String> species;
 
   /// Version Unicode d'introduction, si connue (pour la compatibilité d'affichage).
   final String? unicodeVersion;

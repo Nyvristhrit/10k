@@ -73,6 +73,7 @@ class GameSerialization {
         'turnMode': r.turnMode.name,
         'confirmThirdMiss': r.confirmThirdMiss,
         'encounterEnabled': r.encounterEnabled,
+        'encounterAlertsEnabled': r.encounterAlertsEnabled,
         'encounterAffectsAllMatches': r.encounterAffectsAllMatches,
         'encounterChainsEnabled': r.encounterChainsEnabled,
         'overshootCountsAsMiss': r.overshootCountsAsMiss,
@@ -88,6 +89,8 @@ class GameSerialization {
         turnMode: TurnMode.values.byName(j['turnMode'] as String),
         confirmThirdMiss: j['confirmThirdMiss'] as bool,
         encounterEnabled: j['encounterEnabled'] as bool,
+        // Défaut `true` pour les parties enregistrées avant l'ajout du réglage.
+        encounterAlertsEnabled: (j['encounterAlertsEnabled'] as bool?) ?? true,
         encounterAffectsAllMatches: j['encounterAffectsAllMatches'] as bool,
         encounterChainsEnabled: j['encounterChainsEnabled'] as bool,
         overshootCountsAsMiss: j['overshootCountsAsMiss'] as bool,

@@ -41,7 +41,7 @@ void main() {
     final ids = s.players.map((p) => p.id).toList();
     final a = ids[0], renard = ids[1], panda = ids[2], x = ids[3];
 
-    // Construit la rencontre multiple (Annexe C.7).
+    // Construit une cascade de rencontres (effet chaîné).
     s = ok(e.apply(s, RecordScore(playerId: renard, amount: 1000)));
     s = ok(e.apply(s, RecordScore(playerId: renard, amount: 800)));
     s = ok(e.apply(s, RecordScore(playerId: renard, amount: 500)));
@@ -63,8 +63,10 @@ void main() {
     final undoneRestored = ok(e.apply(restored, const UndoLastAction()));
     expect(scoreOf(undoneRestored, renard), scoreOf(undoneOriginal, renard));
     expect(scoreOf(undoneRestored, panda), scoreOf(undoneOriginal, panda));
+    // Annuler le dernier coup (celui de A) restaure Renard ; Panda avait déjà
+    // été percuté plus tôt, par la cascade de X.
     expect(scoreOf(undoneRestored, renard), 1800);
-    expect(scoreOf(undoneRestored, panda), 1800);
+    expect(scoreOf(undoneRestored, panda), 0);
   });
 
   test('aller-retour en phase de dernière chance', () {

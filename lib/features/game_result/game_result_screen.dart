@@ -6,6 +6,7 @@ import '../../application/providers/app_providers.dart';
 import '../../domain/models/game_state.dart';
 import '../../domain/models/player.dart';
 import '../../shared/animations/confetti.dart';
+import '../../shared/animations/emoji_rain.dart';
 import '../../shared/animations/entrance.dart';
 import '../../shared/widgets/app_background.dart';
 import '../../shared/widgets/player_visuals.dart';
@@ -32,10 +33,16 @@ class _GameResultScreenState extends ConsumerState<GameResultScreen> {
   @override
   Widget build(BuildContext context) {
     final game = ref.watch(gameControllerProvider).value;
+    final winner = game?.winnerPlayerId == null
+        ? null
+        : game!.playerById(game.winnerPlayerId!);
     return Scaffold(
       body: AppBackground(
         child: Stack(
           children: [
+            // Pluie de l'animal du vainqueur, en fond de la fête.
+            if (winner != null)
+              Positioned.fill(child: EmojiRainOverlay(emoji: emojiFor(winner))),
             SafeArea(
               child: game == null
                   ? const Center(child: CircularProgressIndicator())
@@ -82,12 +89,17 @@ class _GameResultScreenState extends ConsumerState<GameResultScreen> {
             ),
           ),
           if (winner != null) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
             Entrance(
-              delay: const Duration(milliseconds: 260),
-              child: Text('${emojiFor(winner)}  ${winner.displayName}',
+              delay: const Duration(milliseconds: 230),
+              child: _WinnerBadge(winner: winner),
+            ),
+            const SizedBox(height: 12),
+            Entrance(
+              delay: const Duration(milliseconds: 300),
+              child: Text(winner.displayName,
                   style: const TextStyle(
-                      fontSize: 26, fontWeight: FontWeight.w800)),
+                      fontSize: 28, fontWeight: FontWeight.w900)),
             ),
             Entrance(
               delay: const Duration(milliseconds: 340),
@@ -175,6 +187,42 @@ class _GameResultScreenState extends ConsumerState<GameResultScreen> {
     navigator.pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const GameSetupScreen()),
       (route) => route.isFirst,
+    );
+  }
+}
+
+/// Grande pastille ronde aux couleurs du vainqueur, avec son animal en grand.
+class _WinnerBadge extends StatelessWidget {
+  const _WinnerBadge({required this.winner});
+
+  final Player winner;
+
+  @override
+  Widget build(BuildContext context) {
+    final token = colorFor(winner);
+    final base = Color(token.backgroundArgb);
+    final accent = Color(token.accentArgb ?? token.backgroundArgb);
+    return Container(
+      width: 96,
+      height: 96,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [accent, base],
+        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.85), width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.55),
+            blurRadius: 28,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Text(emojiFor(winner), style: const TextStyle(fontSize: 54)),
     );
   }
 }

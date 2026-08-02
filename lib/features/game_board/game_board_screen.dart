@@ -9,6 +9,7 @@ import '../../domain/services/game_transition.dart';
 import '../../shared/turn_phrases.dart';
 import '../../shared/widgets/app_background.dart';
 import '../game_result/game_result_screen.dart';
+import '../info/info_screen.dart';
 import '../score_entry/score_entry_sheet.dart';
 import 'game_actions.dart';
 import 'widgets/player_board_tile.dart';
@@ -37,16 +38,30 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
   @override
   Widget build(BuildContext context) {
     // Navigue vers le résultat dès que la partie est terminée.
+    //
+    // On diffère l'ouverture au *post-frame* : la pop-up de saisie de score se
+    // referme d'elle-même (via `Navigator.pop`) dans la micro-tâche qui suit la
+    // validation ; en poussant l'écran de résultat après la frame, on garantit
+    // que ce `pop` ferme bien la pop-up — et non l'écran de victoire qu'on vient
+    // d'ouvrir. Sans ce délai, les deux se télescopaient (course), la pop-up
+    // restait ouverte sur une partie déjà terminée, et plus aucun score ne
+    // pouvait être validé.
     ref.listen(gameControllerProvider, (prev, next) {
       final status = next.value?.status;
       if (status == GameStatus.finished && !_resultShown) {
         _resultShown = true;
-        Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const GameResultScreen()));
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const GameResultScreen()));
+        });
       }
     });
 
     final game = ref.watch(gameControllerProvider).value;
+    // Dépendance au gel des scores : rebâtit les tuiles quand on fige/révèle les
+    // totaux autour d'une rencontre (les tuiles lisent la valeur dans `_tile`).
+    ref.watch(frozenScoresProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -59,6 +74,13 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
             onPressed: game?.lastActiveAction == null
                 ? null
                 : () => ref.read(gameControllerProvider.notifier).undo(),
+          ),
+          IconButton(
+            icon: const Icon(Icons.help_outline),
+            tooltip: 'Règles du jeu',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const InfoScreen()),
+            ),
           ),
         ],
       ),
@@ -187,12 +209,16 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
   /// sans la recréer : le score continue de s'animer et le halo reste intact.
   Widget _tile(BuildContext context, GameState game, Player p, String? currentId,
       {required bool compact}) {
+    // Pendant l'alerte de rencontre, on affiche l'ancien total figé ; à la
+    // fermeture, le gel est levé et le compteur rejoint la vraie valeur.
+    final overrideScore = ref.read(frozenScoresProvider)[p.id];
     return PlayerBoardTile(
       key: _keyFor(p.id),
       player: p,
       isActive: p.id == currentId,
       maxLives: game.rules.maxLives,
       compact: compact,
+      overrideScore: overrideScore,
       onTap: () => _onTapTile(context, game, p),
       onLongPress: () => _confirmLeave(context, p),
     );
@@ -260,6 +286,12 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
 
   bool _canPlay(GameState game, Player player) {
     if (player.hasLeftGame) return false;
+    // Partie terminée : plus aucune saisie (en mode libre, la branche par défaut
+    // renverrait `true` à tort, laissant croire qu'on peut encore jouer).
+    if (game.status == GameStatus.finished ||
+        game.status == GameStatus.archived) {
+      return false;
+    }
     final guided = game.rules.turnMode == TurnMode.guided;
     if (game.status == GameStatus.finalChance) {
       final fc = game.finalChanceState;

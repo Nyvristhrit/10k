@@ -6,8 +6,10 @@ import '../../application/providers/app_providers.dart';
 import '../../domain/errors/game_rule_violation.dart';
 import '../../domain/models/game_rules.dart';
 import '../../domain/models/player.dart';
+import '../../domain/services/encounter_summary.dart';
 import '../../domain/services/game_transition.dart';
 import '../../shared/widgets/player_visuals.dart';
+import '../game_board/encounter_alert.dart';
 import '../game_board/game_actions.dart';
 
 /// Palette de la saisie de score.
@@ -54,7 +56,9 @@ class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
   bool get _canValidate {
     if (_amount <= 0) return false;
     if (_amount % rules.scoreStep != 0) return false;
-    if (!player.hasEnteredGame && _amount < rules.minimumEntryScore) {
+    // Tant que le total est à zéro (jamais sorti, ou retombé à 0), il faut
+    // atteindre le minimum de sortie pour rentrer.
+    if (player.score == 0 && _amount < rules.minimumEntryScore) {
       return false;
     }
     return true;
@@ -82,6 +86,36 @@ class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
 
     if (result is Success) {
       HapticFeedback.mediumImpact();
+      // Rencontre déclenchée ? On la montre à valider avant de refermer la
+      // saisie (réglable dans les options).
+      final summary =
+          rules.encounterAlertsEnabled ? encounterOf(result.transition) : null;
+      if (summary != null) {
+        // Fige les totaux impactés (marqueur + victimes) à leur ancienne valeur
+        // pendant l'alerte. Une fois validée, on lève le gel : les compteurs
+        // rejoignent leur vraie valeur en s'animant — le marqueur qui grimpe,
+        // les victimes qui décroissent — bien en vue, plutôt que caché derrière
+        // la fenêtre.
+        final freeze = ref.read(frozenScoresProvider.notifier);
+        final prev = result.transition.previousState;
+        final held = <String, int>{};
+        final marker = prev.playerById(summary.markerId);
+        if (marker != null) held[summary.markerId] = marker.score;
+        for (final v in summary.victims) {
+          final p = prev.playerById(v.playerId);
+          if (p != null) held[v.playerId] = p.score;
+        }
+        freeze.state = held;
+
+        await showEncounterAlert(context,
+            state: result.transition.nextState, summary: summary);
+        if (mounted) Navigator.of(context).pop();
+        // On referme d'abord la saisie, puis on révèle la décroissance sur le
+        // plateau redevenu visible.
+        Future.delayed(const Duration(milliseconds: 240),
+            () => freeze.state = const {});
+        return;
+      }
       Navigator.of(context).pop();
       return;
     }

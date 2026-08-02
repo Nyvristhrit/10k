@@ -190,31 +190,35 @@ class GameSetupScreen extends ConsumerWidget {
   Future<void> _rename(
       BuildContext context, WidgetRef ref, Player player) async {
     final controller = TextEditingController(text: player.displayName);
-    final newName = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Renommer'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLength: 16,
-          decoration: const InputDecoration(hintText: 'Nom du joueur'),
-          onSubmitted: (v) => Navigator.pop(ctx, v),
+    try {
+      final newName = await showDialog<String>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Renommer'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            maxLength: 16,
+            decoration: const InputDecoration(hintText: 'Nom du joueur'),
+            onSubmitted: (v) => Navigator.pop(ctx, v),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Annuler')),
+            FilledButton(
+                onPressed: () => Navigator.pop(ctx, controller.text),
+                child: const Text('Valider')),
+          ],
         ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Annuler')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, controller.text),
-              child: const Text('Valider')),
-        ],
-      ),
-    );
-    if (newName != null && newName.trim().isNotEmpty) {
-      await ref
-          .read(gameControllerProvider.notifier)
-          .renamePlayer(player.id, newName.trim());
+      );
+      if (newName != null && newName.trim().isNotEmpty) {
+        await ref
+            .read(gameControllerProvider.notifier)
+            .renamePlayer(player.id, newName.trim());
+      }
+    } finally {
+      controller.dispose();
     }
   }
 

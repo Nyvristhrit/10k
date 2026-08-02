@@ -97,7 +97,7 @@ class GameEngine {
       id: _newId(),
       avatarId: avatar.id,
       colorId: color.id,
-      displayName: name.isEmpty ? avatar.defaultFrenchName : name,
+      displayName: name.isEmpty ? _speciesName(avatar) : name,
       seatIndex: state.players.length,
       createdAt: now,
     );
@@ -241,7 +241,11 @@ class GameEngine {
       return _fail(GameRuleViolationCode.invalidScoreStep);
     }
     final player = state.playerById(cmd.playerId)!;
-    if (!player.hasEnteredGame && cmd.amount < state.rules.minimumEntryScore) {
+    // « Sortie » : il faut atteindre le minimum d'entrée non seulement au tout
+    // premier score, mais AUSSI chaque fois qu'on repart de zéro (retombé à 0
+    // après un 3ᵉ échec ou une rencontre). Tant que le total est nul, il faut
+    // refaire le score de sortie pour rentrer.
+    if (player.score == 0 && cmd.amount < state.rules.minimumEntryScore) {
       return _fail(GameRuleViolationCode.entryMinimumNotReached);
     }
 
@@ -272,7 +276,8 @@ class GameEngine {
     ctx.restoreLives(cmd.playerId);
 
     if (state.rules.encounterEnabled) {
-      _resolveEncounters(ctx, cmd.playerId);
+      _resolveEncounters(ctx, cmd.playerId,
+          chain: state.rules.encounterChainsEnabled);
     }
 
     final markerScore = ctx.player(cmd.playerId).score;
@@ -498,24 +503,49 @@ class GameEngine {
     ctx.restoreLives(playerId);
   }
 
-  /// Cherche les victimes d'une rencontre (snapshot figé) et annule leur dernier
-  /// gain (§14, décision F-001).
-  void _resolveEncounters(_Ctx ctx, String markerId) {
-    final markerScore = ctx.player(markerId).score;
-    final victims = ctx
-        .activePlayerIds()
-        .where((id) => id != markerId && ctx.player(id).score == markerScore)
-        .toList(); // liste figée avant toute annulation
+  /// Résout les rencontres déclenchées par le marqueur, **en cascade** (§14).
+  ///
+  /// Le marqueur « arrive » sur son nouveau total : tout adversaire actif au
+  /// même score perd son dernier gain et redescend. En redescendant, cette
+  /// victime peut à son tour percuter un autre joueur au même total, et ainsi
+  /// de suite (`chain`). Un joueur ne peut être percuté qu'une fois par cascade,
+  /// et le nombre de gains actifs décroît à chaque coup : la cascade se termine
+  /// donc toujours. Contrairement à un tour réussi, une victime **ne récupère
+  /// pas** ses cœurs : subir une rencontre n'est pas un tour joué (bug corrigé).
+  void _resolveEncounters(_Ctx ctx, String markerId, {required bool chain}) {
+    // File des « arrivants » : joueurs qui viennent d'atterrir sur un nouveau
+    // total et peuvent percuter un résident. On commence par le marqueur.
+    final queue = <String>[markerId];
+    final bumped = <String>{}; // déjà percutés (une seule fois chacun)
+    final victims = <String>[]; // ordre des victimes, pour le récap / l'anim
 
-    if (victims.isEmpty) return;
-    ctx.recordEncounter(markerId, victims, markerScore);
+    while (queue.isNotEmpty) {
+      final arriverId = queue.removeAt(0);
+      final score = ctx.player(arriverId).score;
+      if (score <= 0) continue;
 
-    for (final victimId in victims) {
-      final cancelled =
-          ctx.cancelLastActiveGain(victimId, GainCancelReason.encounter);
-      if (cancelled != null && !ctx.player(victimId).hasActiveGain) {
-        ctx.restoreLives(victimId); // pile vidée → vies à max (invariant 10)
+      final residents = ctx
+          .activePlayerIds()
+          .where((id) =>
+              id != arriverId &&
+              !bumped.contains(id) &&
+              ctx.player(id).hasActiveGain &&
+              ctx.player(id).score == score)
+          .toList(); // figé avant toute annulation
+
+      for (final residentId in residents) {
+        final cancelled =
+            ctx.cancelLastActiveGain(residentId, GainCancelReason.encounter);
+        if (cancelled == null) continue;
+        bumped.add(residentId);
+        victims.add(residentId);
+        // La victime redescend : en mode cascade, elle peut percuter à son tour.
+        if (chain) queue.add(residentId);
       }
+    }
+
+    if (victims.isNotEmpty) {
+      ctx.recordEncounter(markerId, victims, ctx.player(markerId).score);
     }
   }
 
@@ -701,6 +731,14 @@ class GameEngine {
       if (p.seatIndex > actorSeat) return p.id;
     }
     return pendingPlayers.first.id; // repli circulaire
+  }
+
+  /// Nom affiché par défaut : une vraie espèce tirée au hasard parmi les
+  /// variantes du totem (ex. « Bouvreuil » pour l'oiseau), ou le nom générique
+  /// si aucune variante n'est définie.
+  String _speciesName(AnimalAvatar avatar) {
+    if (avatar.species.isEmpty) return avatar.defaultFrenchName;
+    return avatar.species[_random.nextInt(avatar.species.length)];
   }
 
   AnimalAvatar? _drawAvatar(List<Player> players) {

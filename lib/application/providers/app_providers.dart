@@ -42,3 +42,14 @@ final gameEngineProvider = Provider<GameEngine>((ref) => GameEngine());
 /// Partie active courante (null s'il n'y en a pas).
 final gameControllerProvider =
     AsyncNotifierProvider<GameController, GameState?>(GameController.new);
+
+/// Scores « gelés » le temps d'afficher l'alerte de rencontre.
+///
+/// Quand une rencontre se produit avec l'alerte activée, on fige les totaux
+/// concernés (le marqueur et ses victimes) à leur **ancienne** valeur pendant
+/// que le message est affiché. Une fois le message validé, on vide cette carte :
+/// les compteurs rejoignent alors leur vraie valeur en s'animant — le marqueur
+/// qui grimpe, les victimes qui décroissent — bien visible, plutôt que caché
+/// derrière la fenêtre. Clé = id du joueur, valeur = score à afficher en attendant.
+final frozenScoresProvider =
+    StateProvider<Map<String, int>>((ref) => const {});

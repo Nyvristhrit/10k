@@ -11,6 +11,7 @@ import '../../shared/animations/entrance.dart';
 import '../../shared/animations/falling_dice.dart';
 import '../../shared/widgets/app_background.dart';
 import '../game_board/game_board_screen.dart';
+import '../game_result/game_result_screen.dart';
 import '../game_setup/game_setup_screen.dart';
 import '../info/info_screen.dart';
 
@@ -173,7 +174,9 @@ class HomeScreen extends ConsumerWidget {
               style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(56)),
               onPressed: () => _openGame(context, game),
-              child: const Text('Reprendre la partie'),
+              child: Text(_isOver(game.status)
+                  ? 'Voir le résultat'
+                  : 'Reprendre la partie'),
             ),
           ),
         ],
@@ -210,11 +213,22 @@ class HomeScreen extends ConsumerWidget {
         MaterialPageRoute(builder: (_) => const GameSetupScreen()));
   }
 
+  /// Une partie déjà jouée jusqu'au bout (gagnant désigné, ou archivée).
+  bool _isOver(GameStatus status) =>
+      status == GameStatus.finished || status == GameStatus.archived;
+
   void _openGame(BuildContext context, GameState game) {
     HapticFeedback.selectionClick();
-    final target = game.status == GameStatus.setup
-        ? const GameSetupScreen()
-        : const GameBoardScreen();
+    final Widget target;
+    if (game.status == GameStatus.setup) {
+      target = const GameSetupScreen();
+    } else if (_isOver(game.status)) {
+      // Partie terminée : on renvoie directement vers le classement, pas vers
+      // le plateau (qui, la partie finie, serait figé et sans issue).
+      target = const GameResultScreen();
+    } else {
+      target = const GameBoardScreen();
+    }
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (_) => target));
   }

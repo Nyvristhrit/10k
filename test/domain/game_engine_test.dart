@@ -1,12 +1,14 @@
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tenk/data/catalogs/animal_catalog.dart';
 import 'package:tenk/domain/commands/game_command.dart';
 import 'package:tenk/domain/enums/game_enums.dart';
 import 'package:tenk/domain/errors/game_rule_violation.dart';
 import 'package:tenk/domain/models/game_rules.dart';
 import 'package:tenk/domain/models/game_state.dart';
 import 'package:tenk/domain/models/player.dart';
+import 'package:tenk/domain/services/encounter_summary.dart';
 import 'package:tenk/domain/services/game_engine.dart';
 import 'package:tenk/domain/services/game_transition.dart';
 
@@ -85,6 +87,17 @@ void main() {
           GameRuleViolationCode.maximumPlayersReached);
     });
 
+    test('nom par défaut : une vraie espèce du totem', () {
+      final r = start(4);
+      for (final p in r.state.players) {
+        final avatar = AnimalCatalog.byId(p.avatarId)!;
+        final valides =
+            avatar.species.isEmpty ? [avatar.defaultFrenchName] : avatar.species;
+        expect(valides.contains(p.displayName), true,
+            reason: '« ${p.displayName} » devrait être une espèce de ${avatar.id}');
+      }
+    });
+
     test('emojis (avatars) et couleurs uniques', () {
       final e = makeEngine();
       var s = e.createGame();
@@ -150,7 +163,8 @@ void main() {
       expect(livesOf(s, r.ids.first), 3);
     });
 
-    test('conserve hasEnteredGame après retour à zéro, puis accepte 100', () {
+    test('retombé à zéro : refuse 100, exige de nouveau le minimum de sortie',
+        () {
       final r = start(2, minEntry: 300);
       final e = r.engine;
       final a = r.ids.first;
@@ -160,10 +174,12 @@ void main() {
       s = ok(e.apply(s, PassTurn(playerId: a)));
       s = ok(e.apply(s, PassTurn(playerId: a, confirmed: true)));
       expect(scoreOf(s, a), 0);
-      expect(playerOf(s, a).hasEnteredGame, true);
-      // Peut désormais marquer un petit score sous le minimum de sortie.
-      s = ok(e.apply(s, RecordScore(playerId: a, amount: 100)));
-      expect(scoreOf(s, a), 100);
+      // Retombé à zéro : il faut refaire la sortie. 100 est refusé...
+      expect(failCode(e.apply(s, RecordScore(playerId: a, amount: 100))),
+          GameRuleViolationCode.entryMinimumNotReached);
+      // ...mais 300 le fait rentrer de nouveau.
+      s = ok(e.apply(s, RecordScore(playerId: a, amount: 300)));
+      expect(scoreOf(s, a), 300);
     });
   });
 
@@ -317,7 +333,8 @@ void main() {
       expect(scoreOf(s, r.ids[0]), 0); // victime perd son unique gain
     });
 
-    test('victime dont la pile se vide : vies remises à trois (§14.6)', () {
+    test('victime d\'une rencontre : ne récupère pas ses cœurs (bug corrigé)',
+        () {
       final r = start(2);
       final e = r.engine;
       final victim = r.ids[0];
@@ -326,46 +343,96 @@ void main() {
       s = ok(e.apply(s, PassTurn(playerId: victim))); // vies 2, gain unique
       s = ok(e.apply(s, RecordScore(playerId: marker, amount: 900)));
       expect(scoreOf(s, victim), 0);
-      expect(livesOf(s, victim), 3);
+      // Subir une rencontre n'est pas un tour joué : les cœurs restent à 2.
+      expect(livesOf(s, victim), 2);
     });
 
-    test('rencontre multiple + absence de cascade + annulation (Annexe C.7)',
-        () {
-      // 4 joueurs : A (déclencheur), R, P, X (déclencheur intermédiaire).
+    test('cascade : une victime qui redescend en percute une autre', () {
+      // 4 joueurs : Renard monte haut, Panda se pose, X percute Renard qui,
+      // en redescendant, vient percuter Panda à son tour.
       final r = start(4);
       final e = r.engine;
-      final a = r.ids[0];
       final renard = r.ids[1];
       final panda = r.ids[2];
       final x = r.ids[3];
 
-      // Renard monte à 2300 (pile [1000,800,500]) sans collision.
       var s = ok(e.apply(r.state, RecordScore(playerId: renard, amount: 1000)));
       s = ok(e.apply(s, RecordScore(playerId: renard, amount: 800)));
       s = ok(e.apply(s, RecordScore(playerId: renard, amount: 500)));
-      // Panda à 1800 (aucun autre à 1800).
+      expect(scoreOf(s, renard), 2300);
       s = ok(e.apply(s, RecordScore(playerId: panda, amount: 1800)));
-      // X arrive à 2300 -> rencontre Renard, qui recule à 1800 (indirect).
-      s = ok(e.apply(s, RecordScore(playerId: x, amount: 2300)));
-      expect(scoreOf(s, renard), 1800);
-      expect(scoreOf(s, panda), 1800); // pas de cascade : Panda intact
-      expect(pile(s, panda), [1800]);
 
-      // A arrive à 1800 -> rencontre MULTIPLE : Renard et Panda.
+      // X arrive à 2300 : percute Renard (-> 1800), qui percute Panda en
+      // redescendant (-> 0). Effet cascade.
       final before = s;
-      s = ok(e.apply(s, RecordScore(playerId: a, amount: 1800)));
-      expect(scoreOf(s, a), 1800);
-      expect(scoreOf(s, renard), 1000); // perd 800
-      expect(scoreOf(s, panda), 0); // perd 1800
-      expect(livesOf(s, panda), 3); // pile vidée -> vies à 3
+      s = ok(e.apply(s, RecordScore(playerId: x, amount: 2300)));
+      expect(scoreOf(s, x), 2300);
+      expect(scoreOf(s, renard), 1800); // perd 500
+      expect(scoreOf(s, panda), 0); // percuté par Renard qui redescend
+      expect(pile(s, panda), isEmpty);
 
-      // Annulation de la rencontre multiple : tout est restauré.
+      // Une seule annulation restaure toute la cascade d'un coup.
       final undone = ok(e.apply(s, const UndoLastAction()));
-      expect(scoreOf(undone, a), scoreOf(before, a));
-      expect(scoreOf(undone, renard), 1800);
+      expect(scoreOf(undone, x), scoreOf(before, x));
+      expect(scoreOf(undone, renard), 2300);
       expect(scoreOf(undone, panda), 1800);
-      expect(pile(undone, renard), [1000, 800]);
+      expect(pile(undone, renard), [1000, 800, 500]);
       expect(pile(undone, panda), [1800]);
+    });
+
+    test('cascade désactivable : une seule victime si chaînage coupé', () {
+      final engine = makeEngine();
+      var s = engine.createGame(
+          rules: const GameRules(
+              turnMode: TurnMode.free, encounterChainsEnabled: false));
+      for (var i = 0; i < 4; i++) {
+        s = ok(engine.apply(s, const AddPlayer()));
+      }
+      s = ok(engine.apply(s, const StartGame()));
+      final ids = s.players.map((p) => p.id).toList();
+      final renard = ids[1];
+      final panda = ids[2];
+      final x = ids[3];
+
+      s = ok(engine.apply(s, RecordScore(playerId: renard, amount: 1000)));
+      s = ok(engine.apply(s, RecordScore(playerId: renard, amount: 800)));
+      s = ok(engine.apply(s, RecordScore(playerId: renard, amount: 500)));
+      s = ok(engine.apply(s, RecordScore(playerId: panda, amount: 1800)));
+      s = ok(engine.apply(s, RecordScore(playerId: x, amount: 2300)));
+      expect(scoreOf(s, renard), 1800); // percuté
+      expect(scoreOf(s, panda), 1800); // PAS de cascade : Panda intact
+    });
+
+    test('résumé de rencontre extrait le marqueur et les victimes', () {
+      final r = start(2);
+      final e = r.engine;
+      final a = r.ids[0];
+      final b = r.ids[1];
+      var s = ok(e.apply(r.state, RecordScore(playerId: a, amount: 1500)));
+      s = ok(e.apply(s, RecordScore(playerId: b, amount: 1500)));
+      final summary = encounterOfAction(s.actions.last);
+      expect(summary, isNotNull);
+      expect(summary!.markerId, b);
+      expect(summary.count, 1);
+      expect(summary.victims.single.playerId, a);
+      expect(summary.victims.single.amountLost, 1500);
+    });
+
+    test('résumé de cascade : victimes dans l\'ordre du ricochet', () {
+      final r = start(4);
+      final e = r.engine;
+      final renard = r.ids[1];
+      final panda = r.ids[2];
+      final x = r.ids[3];
+      var s = ok(e.apply(r.state, RecordScore(playerId: renard, amount: 1000)));
+      s = ok(e.apply(s, RecordScore(playerId: renard, amount: 800)));
+      s = ok(e.apply(s, RecordScore(playerId: renard, amount: 500)));
+      s = ok(e.apply(s, RecordScore(playerId: panda, amount: 1800)));
+      s = ok(e.apply(s, RecordScore(playerId: x, amount: 2300)));
+      final summary = encounterOfAction(s.actions.last);
+      expect(summary, isNotNull);
+      expect(summary!.markerId, x);
+      expect(summary.victims.map((v) => v.playerId).toList(), [renard, panda]);
     });
 
     test('ignore un joueur ayant quitté', () {
@@ -442,6 +509,35 @@ void main() {
       expect(fc.pendingPlayerIds, [r.ids[3], r.ids[0], r.ids[1]]);
       expect(fc.currentPlayerId, r.ids[3]);
       expect(fc.pendingPlayerIds.contains(panda), false);
+    });
+
+    test('2 joueurs, mode libre : le dernier tour termine la partie', () {
+      final r = start(2, mode: TurnMode.free);
+      final e = r.engine;
+      final a = r.ids[0];
+      final b = r.ids[1];
+      // A atteint 10 000 -> dernière chance, B a un ultime tour.
+      var s = ok(e.apply(r.state, RecordScore(playerId: a, amount: 10000)));
+      expect(s.status, GameStatus.finalChance);
+      expect(s.finalChanceState!.pendingPlayerIds, [b]);
+      // B joue un score qui n'atteint pas la cible -> la partie se termine, A gagne.
+      s = ok(e.apply(s, RecordScore(playerId: b, amount: 500)));
+      expect(s.status, GameStatus.finished);
+      expect(s.winnerPlayerId, a);
+    });
+
+    test('2 joueurs, mode guidé : le dernier tour (passe) termine la partie', () {
+      final r = start(2, mode: TurnMode.guided);
+      final e = r.engine;
+      final a = r.ids[0];
+      final b = r.ids[1];
+      var s = ok(e.apply(r.state, RecordScore(playerId: a, amount: 10000)));
+      expect(s.status, GameStatus.finalChance);
+      expect(s.finalChanceState!.currentPlayerId, b);
+      // B passe sa dernière chance -> fin de partie, A gagne.
+      s = ok(e.apply(s, PassTurn(playerId: b)));
+      expect(s.status, GameStatus.finished);
+      expect(s.winnerPlayerId, a);
     });
 
     test('rencontre à 10 000 : le candidat est délogé (Annexe C.5)', () {

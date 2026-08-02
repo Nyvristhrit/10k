@@ -109,6 +109,48 @@ class _InfoScreenState extends State<InfoScreen> {
               'Dès qu\'un joueur atteint 10 000, tous les autres ont droit à un '
               'ultime tour pour tenter de le rejoindre. Ensuite, on classe !',
         ),
+        const _SectionTitle('Combinaisons de dés 🎲'),
+        const _Rule(
+          emoji: '✋',
+          title: 'Main pleine',
+          text:
+              'Si tous tes dés marquent des points, tu dois reprendre toute la '
+              'main et relancer, en cumulant les points, tant que ça marche.',
+        ),
+        const _Rule(
+          emoji: '3️⃣',
+          title: 'Brelan (3 dés pareils)',
+          text:
+              'À n\'importe quel lancer : tu gagnes la centaine du chiffre '
+              '(brelan de 3 = 300, de 6 = 600…). Le brelan de 1 est le plus '
+              'fort : 1000 points.',
+        ),
+        const _Rule(
+          emoji: '4️⃣',
+          title: 'Carré (4 dés pareils)',
+          text:
+              'Ça double la valeur des dés : carré de 3 = 600, carré de 5 = '
+              '1000… et le carré de 1 vaut 2000 points.',
+        ),
+        const _Rule(
+          emoji: '🪜',
+          title: 'Les suites',
+          text:
+              'Au 1ᵉʳ lancer du tour seulement. Petite suite 1-2-3-4-5 = 500. '
+              'Grande suite 2-3-4-5-6 = 1000. Tous les dés comptent (main '
+              'pleine) : il faut tout relancer pour continuer.',
+        ),
+        const _Rule(
+          emoji: '🎩',
+          title: 'Le sombrero malgache',
+          text:
+              'Au 1ᵉʳ lancer seulement. Si tu as deux paires (ex. deux 3 et '
+              'deux 5) + un dé à part, tu peux l\'annoncer à la table et '
+              'relancer ce dé isolé. S\'il retombe sur l\'une des deux valeurs, '
+              'tu gagnes la somme des deux en centaines (deux 5 + deux 3 → '
+              '500 + 300 = 800). Le nom est libre : baptise-le comme tu veux ! '
+              'C\'est une main pleine → tu rejoues tous les dés.',
+        ),
       ];
 
   // ── Onglet L'appli ───────────────────────────────────────────────────────
@@ -208,6 +250,26 @@ class _InfoScreenState extends State<InfoScreen> {
                   fontSize: 12)),
         ),
       ];
+}
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 12),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ),
+    );
+  }
 }
 
 class _Intro extends StatelessWidget {
