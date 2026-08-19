@@ -11,9 +11,16 @@ import 'data/repositories/settings_repository.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // On verrouille l'appli en portrait : elle est pensée pour être posée sur la
-  // table, et la mise en paysage rend certains écrans illisibles (débordement).
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  // Portrait par défaut (posée sur la table), mais paysage autorisé pour une
+  // utilisation sur tablette — les écrans adaptent leur disposition en
+  // conséquence (voir `game_board_screen._playerGrid`). Pas de « tête en
+  // bas » : ni portraitDown, ni les deux paysages inversés n'apportent rien
+  // ici et compliqueraient les tests manuels.
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
 
   // Stockage local dans le dossier de documents de l'application (offline).
   final documentsDir = await getApplicationDocumentsDirectory();

@@ -107,91 +107,102 @@ class HomeScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final skin = TenkSkin.of(context);
     final hasActive = game != null;
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
 
-    return Column(
-      children: [
-        const Spacer(flex: 2),
-        Entrance(
-            delay: const Duration(milliseconds: 80),
-            child: _BobbingDice(emoji: skin.trash ? '💀' : '🎲')),
-        const SizedBox(height: 12),
-        Entrance(
-          delay: const Duration(milliseconds: 220),
-          child: FractionallySizedBox(
-            widthFactor: 0.585,
-            // Le badge « TRASH » se pose en travers du logo, comme un
-            // autocollant collé après coup : on empile donc les deux, en
-            // laissant le badge déborder légèrement du cadre (`Clip.none`).
-            //
-            // `passthrough` est essentiel : sans lui, la pile relâcherait les
-            // contraintes et le `FittedBox` se contenterait de la taille
-            // naturelle du texte — le logo rapetissait. Ici, la largeur imposée
-            // traverse la pile telle quelle et le titre garde sa pleine taille.
-            child: Stack(
-              fit: StackFit.passthrough,
-              clipBehavior: Clip.none,
-              children: [
-                FittedBox(
-                  fit: BoxFit.fitWidth,
-                  // On peint le dégradé DIRECTEMENT dans les lettres (via
-                  // `foreground`) plutôt qu'avec un ShaderMask par-dessus un
-                  // texte blanc : ainsi il n'y a plus de blanc dessous qui
-                  // « perce » au bout du 1 et du K en mode sombre. Les stries
-                  // viennent de l'habillage : arc-en-ciel d'origine, ou néon en
-                  // mode trash.
-                  child: Text('10K',
-                      style: TextStyle(
-                        fontSize: 120,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0,
-                        height: 1.0,
-                        foreground: Paint()
-                          ..shader = _stripeShader(skin.titleStripes),
-                      )),
-                ),
-                if (skin.trash)
-                  Positioned(
-                    right: -18,
-                    bottom: -10,
-                    child: Transform.rotate(
-                      angle: -0.16,
-                      child: const _TrashBadge(),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Entrance(
-          delay: const Duration(milliseconds: 340),
-          child: Text(
-              skin.trash ? Taunts.tagline : 'Compagnon de jeu du 10 000',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyLarge
-                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        ),
-        const Spacer(flex: 3),
-        Entrance(
-          delay: const Duration(milliseconds: 460),
-          child: FilledButton(
-            onPressed: () => _onNewGame(context, ref, hasActive),
-            child: const Text('Nouvelle partie'),
-          ),
-        ),
-        if (hasActive) ...[
-          const SizedBox(height: 14),
-          Entrance(
+    final dice = Entrance(
+        delay: const Duration(milliseconds: 80),
+        child: _BobbingDice(emoji: skin.trash ? '💀' : '🎲'));
+
+    final title = Entrance(
+      delay: const Duration(milliseconds: 220),
+      // Le logo est dimensionné par la LARGEUR disponible (`FittedBox` +
+      // `widthFactor`), pour rester cohérent d'un téléphone à l'autre. En
+      // paysage, la largeur de l'écran ne veut plus rien dire pour cet usage
+      // (elle est démesurée par rapport à la hauteur, courte) : on borne alors
+      // le logo à une largeur absolue plutôt qu'à une fraction de l'écran —
+      // sinon le titre grossissait sans limite et faisait déborder la page
+      // (c'est ce qui rendait l'accueil illisible en paysage avant que la
+      // rotation ne soit simplement bloquée).
+      child: landscape
+          ? const SizedBox(width: 260, child: _LogoStack())
+          : FractionallySizedBox(widthFactor: 0.585, child: const _LogoStack()),
+    );
+
+    final tagline = Entrance(
+      delay: const Duration(milliseconds: 340),
+      child: Text(skin.trash ? Taunts.tagline : 'Compagnon de jeu du 10 000',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyLarge
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+    );
+
+    final newGameButton = Entrance(
+      delay: const Duration(milliseconds: 460),
+      child: FilledButton(
+        onPressed: () => _onNewGame(context, ref, hasActive),
+        child: const Text('Nouvelle partie'),
+      ),
+    );
+
+    final resumeButton = !hasActive
+        ? null
+        : Entrance(
             delay: const Duration(milliseconds: 560),
             child: OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(56)),
+              style:
+                  OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(56)),
               onPressed: () => _openGame(context, game),
               child: Text(_isOver(game.status)
                   ? 'Voir le résultat'
                   : 'Reprendre la partie'),
             ),
+          );
+
+    if (landscape) {
+      // Écran large et court : les deux blocs se partagent la largeur au lieu
+      // de s'empiler, ce qui évite tout risque de débordement vertical.
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [dice, const SizedBox(height: 10), title],
+            ),
           ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                tagline,
+                const SizedBox(height: 24),
+                newGameButton,
+                if (resumeButton != null) ...[
+                  const SizedBox(height: 14),
+                  resumeButton,
+                ],
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      children: [
+        const Spacer(flex: 2),
+        dice,
+        const SizedBox(height: 12),
+        title,
+        const SizedBox(height: 8),
+        tagline,
+        const Spacer(flex: 3),
+        newGameButton,
+        if (resumeButton != null) ...[
+          const SizedBox(height: 14),
+          resumeButton,
         ],
         const Spacer(flex: 2),
       ],
@@ -269,6 +280,54 @@ Shader _stripeShader(List<Color> stripes) {
     ],
     stops: stops,
   ).createShader(const Rect.fromLTWH(0, 0, 240, 120));
+}
+
+/// Le logo « 10K » (+ le badge trash s'il y a lieu), dimensionné par son
+/// parent (une `FractionallySizedBox` en portrait, une largeur fixe en
+/// paysage — voir `HomeScreen._content`).
+class _LogoStack extends StatelessWidget {
+  const _LogoStack();
+
+  @override
+  Widget build(BuildContext context) {
+    final skin = TenkSkin.of(context);
+    // Le badge « TRASH » se pose en travers du logo, comme un autocollant
+    // collé après coup : on empile donc les deux, en laissant le badge
+    // déborder légèrement du cadre (`Clip.none`).
+    //
+    // `passthrough` est essentiel : sans lui, la pile relâcherait les
+    // contraintes et le `FittedBox` se contenterait de la taille naturelle du
+    // texte — le logo rapetissait. Ici, la largeur imposée par le parent
+    // traverse la pile telle quelle et le titre garde sa pleine taille.
+    return Stack(
+      fit: StackFit.passthrough,
+      clipBehavior: Clip.none,
+      children: [
+        FittedBox(
+          fit: BoxFit.fitWidth,
+          // On peint le dégradé DIRECTEMENT dans les lettres (via
+          // `foreground`) plutôt qu'avec un ShaderMask par-dessus un texte
+          // blanc : ainsi il n'y a plus de blanc dessous qui « perce » au
+          // bout du 1 et du K en mode sombre. Les stries viennent de
+          // l'habillage : arc-en-ciel d'origine, ou néon en mode trash.
+          child: Text('10K',
+              style: TextStyle(
+                fontSize: 120,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0,
+                height: 1.0,
+                foreground: Paint()..shader = _stripeShader(skin.titleStripes),
+              )),
+        ),
+        if (skin.trash)
+          Positioned(
+            right: -18,
+            bottom: -10,
+            child: Transform.rotate(angle: -0.16, child: const _TrashBadge()),
+          ),
+      ],
+    );
+  }
 }
 
 /// L'étiquette « TRASH », posée en travers du logo comme un autocollant.

@@ -55,4 +55,28 @@ class SettingsRepository {
   /// Mémorise l'état du mode trash : une fois débloqué, il le reste jusqu'à ce
   /// qu'on le désactive volontairement.
   void saveTrashMode(bool enabled) => _write('trashMode', enabled);
+
+  /// Épithètes trash ajoutées par la table (en plus du catalogue de base),
+  /// pour glisser des blagues ou des références perso dans les noms tirés.
+  List<String> loadCustomTrashAdjectives() {
+    final raw = _read()['customTrashAdjectives'];
+    if (raw is! List) return const [];
+    return raw.whereType<String>().toList();
+  }
+
+  /// Mémorise la liste d'épithètes trash perso.
+  void saveCustomTrashAdjectives(List<String> adjectives) =>
+      _write('customTrashAdjectives', adjectives);
+
+  /// L'écran doit-il rester allumé pendant une partie (défaut : oui) ? Réglage
+  /// général, indépendant d'une partie — désactivable pour l'économie de
+  /// batterie.
+  bool loadKeepScreenOnEnabled() {
+    final raw = _read()['keepScreenOnEnabled'];
+    return raw is bool ? raw : true;
+  }
+
+  /// Mémorise le réglage d'écran toujours allumé.
+  void saveKeepScreenOnEnabled(bool enabled) =>
+      _write('keepScreenOnEnabled', enabled);
 }

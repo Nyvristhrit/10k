@@ -19,10 +19,22 @@ class CreateGame extends GameCommand {
 
 /// Ajoute un joueur (animal + couleur tirés automatiquement).
 class AddPlayer extends GameCommand {
-  const AddPlayer({this.displayName});
+  const AddPlayer({
+    this.displayName,
+    this.trashNames = false,
+    this.customTrashAdjectives = const [],
+  });
 
-  /// Nom personnalisé facultatif ; sinon le nom par défaut de l'animal tiré.
+  /// Nom personnalisé facultatif ; sinon un nom « espèce + épithète » tiré au
+  /// hasard (§ [AdjectiveCatalog]).
   final String? displayName;
+
+  /// Pioche l'épithète dans le pool trash plutôt que le pool sage.
+  final bool trashNames;
+
+  /// Épithètes trash ajoutées par la table (réglages), piochées en plus du
+  /// catalogue de base quand [trashNames] est vrai.
+  final List<String> customTrashAdjectives;
 }
 
 /// Renomme un joueur avant le lancement.

@@ -7,6 +7,8 @@ import '../../domain/models/game_rules.dart';
 import '../../domain/models/game_state.dart';
 import '../../shared/widgets/app_background.dart';
 
+import 'trash_adjectives_editor.dart';
+
 /// Écran des paramètres de la partie (§21).
 ///
 /// Les réglages ne sont modifiables qu'avant le démarrage (en préparation).
@@ -160,6 +162,21 @@ class GameSettingsScreen extends ConsumerWidget {
             ),
           ],
         ),
+        _Section(
+          title: 'Écran',
+          children: [
+            _SwitchTile(
+              label: 'Garder l\'écran allumé',
+              subtitle:
+                  'Actif seulement pendant la partie (pas au menu). '
+                  'Désactive-le pour économiser la batterie.',
+              value: ref.watch(keepScreenOnEnabledProvider),
+              onChanged: (v) =>
+                  ref.read(keepScreenOnEnabledProvider.notifier).set(v),
+            ),
+          ],
+        ),
+        if (ref.watch(trashModeProvider)) const TrashAdjectivesSection(),
       ],
     );
   }

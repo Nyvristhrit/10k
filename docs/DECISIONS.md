@@ -118,6 +118,18 @@
 - **Raison :** l'APK se construit alors sans problème. À revoir quand l'écosystème `jni`/Gradle
   sera stabilisé (on pourra retirer l'override).
 
+### A-008 · Cache incrémental Kotlin désactivé (`kotlin.incremental=false`)
+- **Contexte :** l'ajout de `wakelock_plus` (mode « écran toujours allumé ») a
+  introduit `package_info_plus` en dépendance transitive, son premier plugin
+  Kotlin natif compilé pour la première fois. Le build échouait avec
+  `this and base files have different roots` (Kotlin `relativeTo` incapable de
+  comparer des chemins sur deux lecteurs différents : le projet est sur `D:\`,
+  le cache pub sur `C:\Users\...\Pub\Cache`).
+- **Choix :** `kotlin.incremental=false` dans `android/gradle.properties`.
+- **Raison :** bug connu du compilateur Kotlin sous Windows quand projet et
+  cache pub ne partagent pas la même racine de lecteur. Coût : compilation
+  légèrement plus lente (pas d'incrémental), sans impact sur le résultat.
+
 ### A-002 · Undo par valeurs stockées
 - **Choix :** chaque `GameEffect` stocke `previousValue`/`nextValue`. L'annulation ré-applique
   les `previousValue` plutôt que de recalculer.

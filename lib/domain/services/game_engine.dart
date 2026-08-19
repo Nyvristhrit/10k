@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:uuid/uuid.dart';
 
+import '../../data/catalogs/adjective_catalog.dart';
 import '../../data/catalogs/animal_catalog.dart';
 import '../../data/catalogs/color_catalog.dart';
 import '../commands/game_command.dart';
@@ -97,7 +98,10 @@ class GameEngine {
       id: _newId(),
       avatarId: avatar.id,
       colorId: color.id,
-      displayName: name.isEmpty ? _speciesName(avatar) : name,
+      displayName: name.isEmpty
+          ? _scoutName(avatar,
+              trash: cmd.trashNames, custom: cmd.customTrashAdjectives)
+          : name,
       seatIndex: state.players.length,
       createdAt: now,
     );
@@ -511,7 +515,10 @@ class GameEngine {
   /// de suite (`chain`). Un joueur ne peut être percuté qu'une fois par cascade,
   /// et le nombre de gains actifs décroît à chaque coup : la cascade se termine
   /// donc toujours. Contrairement à un tour réussi, une victime **ne récupère
-  /// pas** ses cœurs : subir une rencontre n'est pas un tour joué (bug corrigé).
+  /// pas** ses cœurs simplement pour avoir été touchée : subir une rencontre
+  /// n'est pas un tour joué (bug corrigé). En revanche, si le coup lui vide
+  /// entièrement sa pile (retour à 0), elle redevient « hors jeu » et ses
+  /// vies sont normalisées à 3 (F-003, DECISIONS.md).
   void _resolveEncounters(_Ctx ctx, String markerId, {required bool chain}) {
     // File des « arrivants » : joueurs qui viennent d'atterrir sur un nouveau
     // total et peuvent percuter un résident. On commence par le marqueur.
@@ -539,6 +546,13 @@ class GameEngine {
         if (cancelled == null) continue;
         bumped.add(residentId);
         victims.add(residentId);
+        // Pile vidée (retombée à 0) : la victime redevient « hors jeu » comme
+        // au tout début — elle doit ressortir (F-003, DECISIONS.md). Ses vies
+        // sont normalisées à 3, contrairement à une rencontre qui ne fait que
+        // l'entamer (subir une rencontre n'est pas un tour joué).
+        if (!ctx.player(residentId).hasActiveGain) {
+          ctx.restoreLives(residentId);
+        }
         // La victime redescend : en mode cascade, elle peut percuter à son tour.
         if (chain) queue.add(residentId);
       }
@@ -739,6 +753,17 @@ class GameEngine {
   String _speciesName(AnimalAvatar avatar) {
     if (avatar.species.isEmpty) return avatar.defaultFrenchName;
     return avatar.species[_random.nextInt(avatar.species.length)];
+  }
+
+  /// Nom façon totem scout : l'espèce tirée + une épithète piochée dans le
+  /// catalogue sage ou trash (§ [AdjectiveCatalog]), ex. « Bouvreuil Farceur ».
+  String _scoutName(AnimalAvatar avatar,
+      {required bool trash, List<String> custom = const []}) {
+    final species = _speciesName(avatar);
+    final pool =
+        trash ? [...AdjectiveCatalog.trash, ...custom] : AdjectiveCatalog.safe;
+    if (pool.isEmpty) return species;
+    return '$species ${pool[_random.nextInt(pool.length)]}';
   }
 
   AnimalAvatar? _drawAvatar(List<Player> players) {

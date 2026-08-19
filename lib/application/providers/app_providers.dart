@@ -7,7 +7,9 @@ import '../../data/repositories/settings_repository.dart';
 import '../../domain/models/game_state.dart';
 import '../../domain/repositories/game_repository.dart';
 import '../../domain/services/game_engine.dart';
+import '../controllers/custom_adjectives_controller.dart';
 import '../controllers/game_controller.dart';
+import '../controllers/keep_screen_on_controller.dart';
 import '../controllers/theme_controller.dart';
 import '../controllers/trash_controller.dart';
 
@@ -32,6 +34,17 @@ final themeModeProvider =
 /// depuis l'écran « À propos », et mémorisé entre les sessions.
 final trashModeProvider =
     NotifierProvider<TrashModeController, bool>(TrashModeController.new);
+
+/// Épithètes trash ajoutées par la table (réglages), en plus du catalogue de
+/// base — pour glisser des blagues ou des références perso dans les noms tirés.
+final customTrashAdjectivesProvider =
+    NotifierProvider<CustomAdjectivesController, List<String>>(
+        CustomAdjectivesController.new);
+
+/// Réglage « garder l'écran allumé pendant la partie » (mémorisé, défaut oui).
+final keepScreenOnEnabledProvider =
+    NotifierProvider<KeepScreenOnController, bool>(
+        KeepScreenOnController.new);
 
 /// Rang de la teinte d'accent de l'UI, tiré au hasard **à chaque ouverture** de
 /// l'appli (le provider n'est créé qu'une fois par lancement). Petit détail

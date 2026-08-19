@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../app/theme/tenk_skin.dart';
 import '../../application/providers/app_providers.dart';
@@ -40,7 +41,26 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
       _tileKeys.putIfAbsent(id, () => GlobalKey());
 
   @override
+  void dispose() {
+    // Ce plateau est le seul écran à réclamer le verrou d'écran (§ réglage
+    // « Garder l'écran allumé ») : on le relâche systématiquement en le
+    // quittant, qu'il ait été activé ou non.
+    WakelockPlus.disable();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Écran allumé pendant la partie seulement, et seulement si le réglage
+    // est actif (économie de batterie). On le suit à chaque reconstruction
+    // plutôt que de ne le lire qu'une fois : `enable`/`disable` sont idempotents
+    // côté plateforme, et ça couvre le cas où le réglage change en route.
+    if (ref.watch(keepScreenOnEnabledProvider)) {
+      WakelockPlus.enable();
+    } else {
+      WakelockPlus.disable();
+    }
+
     // Navigue vers le résultat dès que la partie est terminée.
     //
     // On diffère l'ouverture au *post-frame* : la pop-up de saisie de score se
@@ -147,6 +167,8 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
   Widget _playerGrid(BuildContext context, GameState game,
       List<Player> players, String? currentId, String? shamedId) {
     final n = players.length;
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
     final hasActive =
         currentId != null && players.any((p) => p.id == currentId);
     if (hasActive && n >= 5) {
@@ -155,28 +177,51 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
         for (final p in players)
           if (p.id != currentId) p
       ];
-      final restCols = rest.length <= 8 ? 2 : 3;
-      return Column(
-        children: [
-          Expanded(
-            flex: 5,
-            child: Padding(
-              padding: const EdgeInsets.all(6),
-              child: _tile(context, game, active, currentId, shamedId,
-                  compact: false),
-            ),
-          ),
-          Expanded(
-              flex: 7,
-              child: _grid(context, game, rest, currentId, shamedId,
-                  cols: restCols)),
-        ],
+      final restCols = _restColumns(rest.length, landscape: landscape);
+      final spotlight = Padding(
+        padding: const EdgeInsets.all(6),
+        child:
+            _tile(context, game, active, currentId, shamedId, compact: false),
       );
+      final restGrid = _grid(context, game, rest, currentId, shamedId,
+          cols: restCols);
+      // En paysage, la largeur excédentaire (pas la hauteur) : la vedette
+      // passe à côté du reste plutôt qu'au-dessus, sinon les deux se
+      // retrouvent écrasées en hauteur sur un écran large et court.
+      return landscape
+          ? Row(children: [
+              Expanded(flex: 4, child: spotlight),
+              Expanded(flex: 6, child: restGrid),
+            ])
+          : Column(children: [
+              Expanded(flex: 5, child: spotlight),
+              Expanded(flex: 7, child: restGrid),
+            ]);
     }
-    // Une seule colonne jusqu'à 4 joueurs (50 %, 33 %, 25 %…), deux colonnes de
-    // 5 à 8, trois au-delà.
-    final cols = n <= 4 ? 1 : (n <= 8 ? 2 : 3);
+    final cols = _columnsFor(n, landscape: landscape);
     return _grid(context, game, players, currentId, shamedId, cols: cols);
+  }
+
+  /// Nombre de colonnes de la grille principale. En portrait, on privilégie
+  /// des blocs pleine largeur (une colonne jusqu'à 4 joueurs) ; en paysage,
+  /// l'écran est large et court, donc on étale plutôt les tuiles en largeur
+  /// pour éviter des blocs écrasés.
+  int _columnsFor(int n, {required bool landscape}) {
+    if (landscape) {
+      if (n <= 2) return 2;
+      if (n <= 4) return 2;
+      if (n <= 8) return 4;
+      return 4;
+    }
+    if (n <= 4) return 1;
+    if (n <= 8) return 2;
+    return 3;
+  }
+
+  /// Colonnes de la grille secondaire (sous/à côté de la vedette).
+  int _restColumns(int restCount, {required bool landscape}) {
+    if (landscape) return restCount <= 6 ? 3 : 4;
+    return restCount <= 8 ? 2 : 3;
   }
 
   /// Grille « plein écran » avec un nombre de colonnes donné. Chaque rangée se

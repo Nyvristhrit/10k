@@ -199,7 +199,7 @@ class GameSetupScreen extends ConsumerWidget {
           content: TextField(
             controller: controller,
             autofocus: true,
-            maxLength: 16,
+            maxLength: 28,
             decoration: const InputDecoration(hintText: 'Nom du joueur'),
             onSubmitted: (v) => Navigator.pop(ctx, v),
           ),

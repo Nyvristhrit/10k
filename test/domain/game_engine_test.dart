@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tenk/data/catalogs/adjective_catalog.dart';
 import 'package:tenk/data/catalogs/animal_catalog.dart';
 import 'package:tenk/domain/commands/game_command.dart';
 import 'package:tenk/domain/enums/game_enums.dart';
@@ -87,15 +88,55 @@ void main() {
           GameRuleViolationCode.maximumPlayersReached);
     });
 
-    test('nom par défaut : une vraie espèce du totem', () {
+    test('nom par défaut : une vraie espèce + une épithète sage du totem',
+        () {
       final r = start(4);
       for (final p in r.state.players) {
         final avatar = AnimalCatalog.byId(p.avatarId)!;
-        final valides =
+        final especes =
             avatar.species.isEmpty ? [avatar.defaultFrenchName] : avatar.species;
-        expect(valides.contains(p.displayName), true,
-            reason: '« ${p.displayName} » devrait être une espèce de ${avatar.id}');
+        final matching = especes.where((e) => p.displayName.startsWith(e)).toList()
+          ..sort((a, b) => b.length.compareTo(a.length));
+        expect(matching, isNotEmpty,
+            reason:
+                '« ${p.displayName} » devrait commencer par une espèce de ${avatar.id}');
+        final adjective = p.displayName.substring(matching.first.length).trim();
+        expect(AdjectiveCatalog.safe.contains(adjective), true,
+            reason: '« $adjective » devrait être une épithète sage');
       }
+    });
+
+    test('mode trash : nom par défaut pioche une épithète trash', () {
+      final engine = makeEngine();
+      var s = engine.createGame();
+      s = ok(engine.apply(s, const AddPlayer(trashNames: true)));
+      final name = s.players.single.displayName;
+      final avatar = AnimalCatalog.byId(s.players.single.avatarId)!;
+      final especes =
+          avatar.species.isEmpty ? [avatar.defaultFrenchName] : avatar.species;
+      final matching = especes.where((e) => name.startsWith(e)).toList()
+        ..sort((a, b) => b.length.compareTo(a.length));
+      final adjective = name.substring(matching.first.length).trim();
+      expect(AdjectiveCatalog.trash.contains(adjective), true,
+          reason: '« $adjective » devrait être une épithète trash');
+    });
+
+    test('mode trash : les épithètes perso rejoignent le pool', () {
+      final engine = makeEngine();
+      // Une nouvelle partie à chaque tirage (le cap de 12 joueurs empêcherait
+      // d'accumuler assez d'essais dans une seule partie).
+      var found = false;
+      for (var i = 0; i < 300; i++) {
+        final s = ok(engine.apply(engine.createGame(),
+            const AddPlayer(
+                trashNames: true, customTrashAdjectives: ['Aubergine'])));
+        if (s.players.single.displayName.endsWith('Aubergine')) {
+          found = true;
+          break;
+        }
+      }
+      expect(found, true,
+          reason: 'L\'épithète perso devrait finir par sortir du tirage');
     });
 
     test('emojis (avatars) et couleurs uniques', () {
@@ -333,8 +374,26 @@ void main() {
       expect(scoreOf(s, r.ids[0]), 0); // victime perd son unique gain
     });
 
-    test('victime d\'une rencontre : ne récupère pas ses cœurs (bug corrigé)',
-        () {
+    test(
+        'victime d\'une rencontre partielle : ne récupère pas ses cœurs '
+        '(bug corrigé)', () {
+      final r = start(2);
+      final e = r.engine;
+      final victim = r.ids[0];
+      final marker = r.ids[1];
+      var s = ok(e.apply(r.state, RecordScore(playerId: victim, amount: 900)));
+      s = ok(e.apply(s, RecordScore(playerId: victim, amount: 400)));
+      s = ok(e.apply(s, PassTurn(playerId: victim))); // vies 2
+      s = ok(e.apply(s, RecordScore(playerId: marker, amount: 1300)));
+      // Seul le dernier gain (400) part : la pile n'est pas vidée.
+      expect(scoreOf(s, victim), 900);
+      // Subir une rencontre n'est pas un tour joué : les cœurs restent à 2.
+      expect(livesOf(s, victim), 2);
+    });
+
+    test(
+        'victime d\'une rencontre qui vide sa pile : ressort comme au début, '
+        'vies normalisées à 3 (F-003)', () {
       final r = start(2);
       final e = r.engine;
       final victim = r.ids[0];
@@ -342,9 +401,14 @@ void main() {
       var s = ok(e.apply(r.state, RecordScore(playerId: victim, amount: 900)));
       s = ok(e.apply(s, PassTurn(playerId: victim))); // vies 2, gain unique
       s = ok(e.apply(s, RecordScore(playerId: marker, amount: 900)));
+      // Le seul gain de la victime part : la pile est vidée, elle retombe à 0.
       expect(scoreOf(s, victim), 0);
-      // Subir une rencontre n'est pas un tour joué : les cœurs restent à 2.
-      expect(livesOf(s, victim), 2);
+      // Retomber à 0 revient à ressortir du jeu : vies normalisées à 3.
+      expect(livesOf(s, victim), 3);
+      // Elle doit d'ailleurs refaire le score de sortie pour rejouer.
+      expect(
+          failCode(e.apply(s, RecordScore(playerId: victim, amount: 200))),
+          GameRuleViolationCode.entryMinimumNotReached);
     });
 
     test('cascade : une victime qui redescend en percute une autre', () {

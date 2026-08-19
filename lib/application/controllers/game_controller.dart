@@ -54,7 +54,10 @@ class GameController extends AsyncNotifier<GameState?> {
   }
 
   // Raccourcis de préparation.
-  Future<EngineResult> addPlayer() => dispatch(const AddPlayer());
+  Future<EngineResult> addPlayer() => dispatch(AddPlayer(
+        trashNames: ref.read(trashModeProvider),
+        customTrashAdjectives: ref.read(customTrashAdjectivesProvider),
+      ));
   Future<EngineResult> renamePlayer(String id, String name) =>
       dispatch(RenamePlayer(playerId: id, newName: name));
   Future<EngineResult> removePlayer(String id) =>

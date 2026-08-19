@@ -14,6 +14,15 @@ void main() {
     final repo = SettingsRepository(dir);
     expect(repo.loadThemeMode(), ThemeMode.dark);
     expect(repo.loadTrashMode(), isFalse);
+    expect(repo.loadCustomTrashAdjectives(), isEmpty);
+  });
+
+  test('mémorise les épithètes trash perso', () {
+    final repo = SettingsRepository(dir);
+    repo.saveCustomTrashAdjectives(['Aubergine', 'Chapardeur']);
+
+    final reloaded = SettingsRepository(dir);
+    expect(reloaded.loadCustomTrashAdjectives(), ['Aubergine', 'Chapardeur']);
   });
 
   test('mémorise le thème et le mode trash', () {

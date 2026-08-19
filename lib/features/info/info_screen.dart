@@ -247,17 +247,13 @@ class _InfoScreenState extends ConsumerState<InfoScreen> {
               'sur ton téléphone.',
         ),
         // La carte de dédicace cache l'interrupteur du mode trash : sept tapes
-        // et l'appli change de personnalité (voir `_onDedicationTap`).
+        // et l'appli change de personnalité (voir `_onDedicationTap`). Une fois
+        // le mode actif, elle porte elle-même le liseré néon (au lieu de se
+        // fondre dans les cartes voisines) pour qu'on retrouve où retaper.
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: _onDedicationTap,
-          child: const _Rule(
-            emoji: '🌈',
-            title: 'Imaginé par Ben, vibecodé par Claude',
-            text:
-                'Un projet perso pour les soirées entre amis. Dédicace à Fanch, '
-                'Khorven et Victor pour cette introduction aux 10 000 ! 🍻',
-          ),
+          child: _DedicationCard(active: ref.watch(trashModeProvider)),
         ),
         if (ref.watch(trashModeProvider)) ...[
           const SizedBox(height: 4),
@@ -332,6 +328,70 @@ class _InfoScreenState extends ConsumerState<InfoScreen> {
     );
   }
 
+}
+
+/// La carte de dédicace elle-même : identique à [_Rule] quand le mode trash
+/// est éteint (l'interrupteur reste caché, comme sur Android), mais porte un
+/// liseré néon + une pastille « ×7 » une fois actif, pour qu'on retrouve du
+/// premier coup d'œil où retaper (retour signalé par un ami : le bandeau du
+/// dessous ne suffisait pas à repérer la bonne carte).
+class _DedicationCard extends StatelessWidget {
+  const _DedicationCard({required this.active});
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!active) {
+      return const _Rule(
+        emoji: '🌈',
+        title: 'Imaginé par Ben, vibecodé par Claude',
+        text: 'Un projet perso pour les soirées entre amis. Dédicace à Fanch, '
+            'Khorven et Victor pour cette introduction aux 10 000 ! 🍻',
+      );
+    }
+    final skin = TenkSkin.of(context);
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: skin.neon, width: 2),
+            boxShadow: [
+              BoxShadow(
+                  color: skin.neon.withValues(alpha: 0.45),
+                  blurRadius: 14,
+                  spreadRadius: 1),
+            ],
+          ),
+          child: const _Rule(
+            emoji: '🌈',
+            title: 'Imaginé par Ben, vibecodé par Claude',
+            text:
+                'Un projet perso pour les soirées entre amis. Dédicace à Fanch, '
+                'Khorven et Victor pour cette introduction aux 10 000 ! 🍻',
+          ),
+        ),
+        Positioned(
+          top: -10,
+          right: 10,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: skin.neon,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: const Text('RETAPE ×7',
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                    color: Colors.black)),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// Bandeau qui rappelle, dans « À propos », que le mode trash est actif et

@@ -93,130 +93,144 @@ class _GameResultScreenState extends ConsumerState<GameResultScreen> {
         ? null
         : game.playerById(game.winnerPlayerId!);
 
+    final header = <Widget>[
+      const SizedBox(height: 20),
+      const Entrance(
+        delay: Duration(milliseconds: 60),
+        offset: Offset(0, -12),
+        child: _PoppingTrophy(),
+      ),
+      Entrance(
+        delay: const Duration(milliseconds: 160),
+        child: ShaderMask(
+          shaderCallback: (r) => const LinearGradient(
+            colors: [Color(0xFFFCD34D), Color(0xFFF59E0B)],
+          ).createShader(r),
+          child: Text(trash ? Taunts.victoryTitle : 'VICTOIRE',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 3)),
+        ),
+      ),
+      if (winner != null) ...[
+        const SizedBox(height: 14),
+        Entrance(
+          delay: const Duration(milliseconds: 230),
+          child: _WinnerBadge(winner: winner),
+        ),
+        const SizedBox(height: 12),
+        Entrance(
+          delay: const Duration(milliseconds: 300),
+          child: Text(winner.displayName,
+              style:
+                  const TextStyle(fontSize: 28, fontWeight: FontWeight.w900)),
+        ),
+        if (trash)
+          Entrance(
+            delay: const Duration(milliseconds: 380),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Text(
+                _winnerLine,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    fontSize: 14,
+                    fontStyle: FontStyle.italic,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ),
+            ),
+          ),
+        Entrance(
+          delay: const Duration(milliseconds: 340),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: winner.score.toDouble()),
+            duration: const Duration(milliseconds: 1000),
+            curve: Curves.easeOutCubic,
+            builder: (_, v, _) => Text('${v.round()} points',
+                style: TextStyle(
+                    fontSize: 18,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ),
+        ),
+      ],
+      const SizedBox(height: 24),
+    ];
+
+    final rankingBody = <Widget>[
+      for (var i = 0; i < ranking.length; i++)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Entrance(
+            delay: Duration(milliseconds: 440 + i * 90),
+            offset: const Offset(0, 18),
+            child: _row(i + 1, ranking[i], trash, shamedId),
+          ),
+        ),
+      const SizedBox(height: 8),
+      Entrance(
+        delay: const Duration(milliseconds: 520),
+        child: _TallySheet(facts: facts),
+      ),
+      if (trash && _loserLine != null)
+        Entrance(
+          delay: const Duration(milliseconds: 560),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 14),
+            child: Text(
+              _loserLine!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ),
+      if (trash && facts.hasHighlights)
+        Entrance(
+          delay: const Duration(milliseconds: 600),
+          child: _HallOfShame(facts: facts, game: game),
+        ),
+      const SizedBox(height: 12),
+    ];
+
+    final buttons = <Widget>[
+      Entrance(
+        delay: const Duration(milliseconds: 500),
+        child: FilledButton(
+          onPressed: () => _newGame(context),
+          child: const Text('Nouvelle partie'),
+        ),
+      ),
+      const SizedBox(height: 10),
+      TextButton(
+        onPressed: () =>
+            Navigator.of(context).popUntil((route) => route.isFirst),
+        child: const Text('Retour à l\'accueil'),
+      ),
+      const SizedBox(height: 12),
+    ];
+
+    // Classement, bilan et palmarès défilent ensemble : sinon, à 8 ou 12
+    // joueurs, le bas de l'écran se battrait pour quelques pixels. En paysage
+    // (écran court), on va plus loin et fait défiler l'en-tête (trophée,
+    // gagnant) avec le reste, plutôt qu'un bloc fixe qui risquerait à lui
+    // seul de déborder sur les téléphones les plus courts.
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
-          const SizedBox(height: 20),
-          const Entrance(
-            delay: Duration(milliseconds: 60),
-            offset: Offset(0, -12),
-            child: _PoppingTrophy(),
-          ),
-          Entrance(
-            delay: const Duration(milliseconds: 160),
-            child: ShaderMask(
-              shaderCallback: (r) => const LinearGradient(
-                colors: [Color(0xFFFCD34D), Color(0xFFF59E0B)],
-              ).createShader(r),
-              child: Text(trash ? Taunts.victoryTitle : 'VICTOIRE',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 3)),
-            ),
-          ),
-          if (winner != null) ...[
-            const SizedBox(height: 14),
-            Entrance(
-              delay: const Duration(milliseconds: 230),
-              child: _WinnerBadge(winner: winner),
-            ),
-            const SizedBox(height: 12),
-            Entrance(
-              delay: const Duration(milliseconds: 300),
-              child: Text(winner.displayName,
-                  style: const TextStyle(
-                      fontSize: 28, fontWeight: FontWeight.w900)),
-            ),
-            if (trash)
-              Entrance(
-                delay: const Duration(milliseconds: 380),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Text(
-                    _winnerLine,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontStyle: FontStyle.italic,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  ),
-                ),
-              ),
-            Entrance(
-              delay: const Duration(milliseconds: 340),
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: winner.score.toDouble()),
-                duration: const Duration(milliseconds: 1000),
-                curve: Curves.easeOutCubic,
-                builder: (_, v, _) => Text('${v.round()} points',
-                    style: TextStyle(
-                        fontSize: 18,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant)),
-              ),
-            ),
-          ],
-          const SizedBox(height: 24),
-          // Classement, bilan et palmarès défilent ensemble : sinon, à 8 ou 12
-          // joueurs, le bas de l'écran se battrait pour quelques pixels.
+          if (!landscape) ...header,
           Expanded(
             child: ListView(
               padding: EdgeInsets.zero,
-              children: [
-                for (var i = 0; i < ranking.length; i++)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Entrance(
-                      delay: Duration(milliseconds: 440 + i * 90),
-                      offset: const Offset(0, 18),
-                      child: _row(i + 1, ranking[i], trash, shamedId),
-                    ),
-                  ),
-                const SizedBox(height: 8),
-                Entrance(
-                  delay: const Duration(milliseconds: 520),
-                  child: _TallySheet(facts: facts),
-                ),
-                if (trash && _loserLine != null)
-                  Entrance(
-                    delay: const Duration(milliseconds: 560),
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 14),
-                      child: Text(
-                        _loserLine!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant),
-                      ),
-                    ),
-                  ),
-                if (trash && facts.hasHighlights)
-                  Entrance(
-                    delay: const Duration(milliseconds: 600),
-                    child: _HallOfShame(facts: facts, game: game),
-                  ),
-                const SizedBox(height: 12),
-              ],
+              children: [if (landscape) ...header, ...rankingBody],
             ),
           ),
-          Entrance(
-            delay: const Duration(milliseconds: 500),
-            child: FilledButton(
-              onPressed: () => _newGame(context),
-              child: const Text('Nouvelle partie'),
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextButton(
-            onPressed: () =>
-                Navigator.of(context).popUntil((route) => route.isFirst),
-            child: const Text('Retour à l\'accueil'),
-          ),
-          const SizedBox(height: 12),
+          ...buttons,
         ],
       ),
     );
