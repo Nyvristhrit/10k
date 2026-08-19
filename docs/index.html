@@ -237,7 +237,10 @@
       <span class="dice">🎲</span>
       <svg class="logo-svg" viewBox="0 0 240 120" role="img" aria-label="10K">
         <defs>
-          <linearGradient id="stripes" x1="0" y1="0" x2="1" y2="1">
+          <!-- userSpaceOnUse + les coordonnées du viewBox (pas 0-1) : l'angle
+               des bandes suit le cadre du logo, pas la boîte du texte "10K"
+               (plus étroite), sinon la diagonale n'est pas la bonne. -->
+          <linearGradient id="stripes" x1="0" y1="0" x2="240" y2="120" gradientUnits="userSpaceOnUse">
             <stop offset="0" stop-color="#E11D48"/>
             <stop offset="0.2059" stop-color="#E11D48"/>
             <stop offset="0.2059" stop-color="#F97316"/>
@@ -252,7 +255,11 @@
             <stop offset="1" stop-color="#8B5CF6"/>
           </linearGradient>
         </defs>
-        <text x="120" y="98" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="900" font-size="112" fill="url(#stripes)">10K</text>
+        <!-- Space Grotesk n'a pas d'instance 900 sur le web (elle s'arrête à
+             700, contre une graisse simulée par Flutter dans l'appli) : un
+             contour épais de la même couleur comble l'écart et redonne le
+             même aplomb qu'à l'écran. -->
+        <text x="120" y="98" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="112" fill="url(#stripes)" stroke="url(#stripes)" stroke-width="5" stroke-linejoin="round" paint-order="stroke fill">10K</text>
       </svg>
       <p class="tagline">Compagnon de jeu du 10 000 — 100&nbsp;% hors ligne</p>
     </header>
