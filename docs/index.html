@@ -53,22 +53,14 @@
     0%, 100% { transform: translateY(0) rotate(-4deg); }
     50% { transform: translateY(-14px) rotate(4deg); }
   }
-  .logo {
-    font-size: clamp(64px, 18vw, 128px);
-    font-weight: 900;
-    line-height: 1;
-    margin: 8px 0 4px;
-    letter-spacing: -1px;
-    background: linear-gradient(120deg,
-      var(--red) 0%, var(--red) 20.6%,
-      var(--orange) 20.6%, var(--orange) 35.3%,
-      var(--yellow) 35.3%, var(--yellow) 50%,
-      var(--green) 50%, var(--green) 64.7%,
-      var(--blue) 64.7%, var(--blue) 79.4%,
-      var(--violet) 79.4%, var(--violet) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+  /* Le logo est un SVG (pas du texte + background-clip:text, peu fiable
+     selon les navigateurs) : mêmes 6 couleurs et mêmes coupures franches que
+     le dégradé de l'appli (voir `home_screen.dart::_stripeShader`). */
+  .logo-svg {
+    width: min(420px, 72vw);
+    height: auto;
+    margin: 4px 0;
+    filter: drop-shadow(0 8px 30px rgba(99, 102, 241, 0.35));
   }
   .tagline {
     color: var(--ink-dim);
@@ -185,13 +177,82 @@
   }
   footer a { color: var(--ink-dim); }
   footer a:hover { color: var(--ink); }
+
+  /* Fond animé : des dés qui tombent doucement, comme sur l'accueil de
+     l'appli (`shared/animations/falling_dice.dart`). Purement CSS, un peu
+     flous et estompés pour rester en arrière-plan, jamais gênants. */
+  .bg-dice {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .bg-dice span {
+    position: absolute;
+    top: -12vh;
+    opacity: 0.28;
+    filter: blur(0.5px);
+    animation-name: fall;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+  @keyframes fall {
+    from { transform: translateY(0) rotate(0deg); }
+    to { transform: translateY(126vh) rotate(360deg); }
+  }
+  .veil {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    backdrop-filter: blur(6px);
+    background: rgba(11, 10, 15, 0.22);
+  }
+  .wrap { position: relative; z-index: 2; }
+  @media (prefers-reduced-motion: reduce) {
+    .bg-dice, .dice { animation: none !important; }
+  }
 </style>
 </head>
 <body>
+  <div class="bg-dice" aria-hidden="true">
+    <span style="left:4%; font-size:30px; animation-duration:19s; animation-delay:-2s;">🎲</span>
+    <span style="left:13%; font-size:22px; animation-duration:24s; animation-delay:-11s;">🎲</span>
+    <span style="left:22%; font-size:40px; animation-duration:16s; animation-delay:-6s;">🎲</span>
+    <span style="left:31%; font-size:26px; animation-duration:21s; animation-delay:-15s;">🎲</span>
+    <span style="left:40%; font-size:34px; animation-duration:18s; animation-delay:-4s;">🎲</span>
+    <span style="left:49%; font-size:24px; animation-duration:23s; animation-delay:-9s;">🎲</span>
+    <span style="left:58%; font-size:38px; animation-duration:17s; animation-delay:-13s;">🎲</span>
+    <span style="left:67%; font-size:28px; animation-duration:22s; animation-delay:-1s;">🎲</span>
+    <span style="left:76%; font-size:32px; animation-duration:20s; animation-delay:-8s;">🎲</span>
+    <span style="left:85%; font-size:24px; animation-duration:25s; animation-delay:-17s;">🎲</span>
+    <span style="left:92%; font-size:36px; animation-duration:15s; animation-delay:-5s;">🎲</span>
+    <span style="left:9%; font-size:20px; animation-duration:27s; animation-delay:-20s;">🎲</span>
+  </div>
+  <div class="veil" aria-hidden="true"></div>
   <div class="wrap">
     <header class="hero">
       <span class="dice">🎲</span>
-      <div class="logo">10K</div>
+      <svg class="logo-svg" viewBox="0 0 240 120" role="img" aria-label="10K">
+        <defs>
+          <linearGradient id="stripes" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#E11D48"/>
+            <stop offset="0.2059" stop-color="#E11D48"/>
+            <stop offset="0.2059" stop-color="#F97316"/>
+            <stop offset="0.3529" stop-color="#F97316"/>
+            <stop offset="0.3529" stop-color="#FACC15"/>
+            <stop offset="0.5" stop-color="#FACC15"/>
+            <stop offset="0.5" stop-color="#22C55E"/>
+            <stop offset="0.6471" stop-color="#22C55E"/>
+            <stop offset="0.6471" stop-color="#3B82F6"/>
+            <stop offset="0.7941" stop-color="#3B82F6"/>
+            <stop offset="0.7941" stop-color="#8B5CF6"/>
+            <stop offset="1" stop-color="#8B5CF6"/>
+          </linearGradient>
+        </defs>
+        <text x="120" y="98" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="900" font-size="112" fill="url(#stripes)">10K</text>
+      </svg>
       <p class="tagline">Compagnon de jeu du 10 000 — 100&nbsp;% hors ligne</p>
     </header>
 
