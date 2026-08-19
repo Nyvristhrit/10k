@@ -72,17 +72,14 @@ class _TrashAdjectivesSectionState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Un mot à la fois : tape une épithète, appuie sur '
-                  '« + », elle devient une petite case ci-dessous (tape '
-                  'dessus pour la retirer). Elles s\'ajoutent aux '
-                  '${AdjectiveCatalog.trash.length} épithètes de base, '
-                  'piochées au hasard à la création d\'un joueur sans nom '
-                  'personnalisé.',
+                  'Ajoute tes propres épithètes, piochées en plus des '
+                  '${AdjectiveCatalog.trash.length} de base.',
                   style:
                       TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
                 ),
                 const SizedBox(height: 14),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
                       child: TextField(
@@ -92,9 +89,28 @@ class _TrashAdjectivesSectionState
                         decoration: InputDecoration(
                           hintText: atLimit
                               ? '20 épithètes, le maximum'
-                              : 'Une épithète',
+                              : 'Écris une épithète ici',
                           counterText: '',
                           isDense: true,
+                          filled: true,
+                          fillColor: scheme.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                                color: scheme.outline.withValues(alpha: 0.6)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                                color: scheme.outline.withValues(alpha: 0.6)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide:
+                                BorderSide(color: scheme.primary, width: 2),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
                         ),
                         onSubmitted: (_) => _add(),
                       ),
@@ -102,6 +118,13 @@ class _TrashAdjectivesSectionState
                     const SizedBox(width: 8),
                     FilledButton(
                       onPressed: atLimit ? null : _add,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(52, 52),
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                       child: const Icon(Icons.add),
                     ),
                   ],
