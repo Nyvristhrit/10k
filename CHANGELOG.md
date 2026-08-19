@@ -10,6 +10,15 @@
 > techniques justifiés), `docs/BACKLOG.md` (reste à faire) et
 > `docs/SPECIFICATION.md` (règles du jeu détaillées).
 
+## [v1.2.1] — 2026-08-19
+
+### Corrigé
+- Éditeur d'épithètes trash (réglages) : le texte d'aide et le champ de
+  saisie avaient le même style visuel, sans bordure ni fond distinct → perçu
+  comme un seul bloc de texte non interactif (« impossible d'écrire dedans »).
+  Le champ a maintenant une bordure nette, un fond contrasté et un texte
+  d'aide raccourci pour ne plus se confondre avec l'explication au-dessus.
+
 ## [v1.2.0] — 2026-08-19
 
 ### Corrigé
