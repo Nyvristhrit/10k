@@ -46,7 +46,13 @@
   }
   .dice {
     font-size: 56px;
-    display: inline-block;
+    /* `display:block` (pas inline-block) : sinon ce dé et le SVG du logo,
+       tous deux inline par défaut, se retrouvent sur la même ligne — centrés
+       ensemble comme un seul bloc, le dé collé à gauche du logo au lieu
+       d'être au-dessus. */
+    display: block;
+    margin: 0 auto;
+    width: fit-content;
     animation: bob 3.2s ease-in-out infinite;
   }
   @keyframes bob {
@@ -57,9 +63,12 @@
      selon les navigateurs) : mêmes 6 couleurs et mêmes coupures franches que
      le dégradé de l'appli (voir `home_screen.dart::_stripeShader`). */
   .logo-svg {
+    /* SVG est `inline` par défaut : `display:block` le fait passer sous le
+       dé au lieu de se placer à côté (voir commentaire sur `.dice`). */
+    display: block;
     width: min(420px, 72vw);
     height: auto;
-    margin: 4px 0;
+    margin: 4px auto;
     filter: drop-shadow(0 8px 30px rgba(99, 102, 241, 0.35));
   }
   .tagline {
