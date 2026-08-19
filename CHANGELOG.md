@@ -101,11 +101,16 @@ pour le détail commit par commit :
 3. `gh release create vX.Y.Z "10K.apk#10K.apk" --repo Nyvristhrit/10k --title "10K vX.Y.Z" --notes "..."`
    — **l'asset doit impérativement s'appeler `10K.apk`** (le lien de la page
    de téléchargement est câblé sur ce nom exact).
-4. Ajouter une section ici (CHANGELOG.md) avec les changements.
+4. Ajouter une section ici (CHANGELOG.md) avec les changements — **toujours**,
+   même pour un correctif mineur.
 5. Mettre à jour `docs/index.html` : la pastille `.version-pill` (numéro de
-   version) et le bloc `.changelog` (nouvelle entrée en tête, garder les 2-3
-   dernières visibles suffit — le lien « historique complet » renvoie déjà
-   vers ce fichier).
+   version, toujours à jour avec la dernière Release). Le bloc `.changelog`
+   affiché sur la page, en revanche, **n'est pas censé lister chaque
+   version** : seulement les versions avec un changement notable pour un
+   joueur (nouvelle fonctionnalité, bug visible corrigé). Un correctif
+   mineur/cosmétique (ex. v1.2.1) reste dans ce fichier et l'historique Git,
+   mais ne mérite pas sa propre entrée sur la page publique — sinon la liste
+   s'allonge trop vite. Dans le doute, ne pas ajouter d'entrée sur la page.
 6. `gh` est déjà installé et authentifié sur la machine de Ben (compte
    GitHub `Nyvristhrit`, jeton dans le trousseau Windows) — pas besoin de
    relancer `gh auth login`, sauf expiration.
