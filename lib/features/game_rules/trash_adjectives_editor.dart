@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../application/controllers/custom_adjectives_controller.dart';
 import '../../application/providers/app_providers.dart';
 import '../../data/catalogs/adjective_catalog.dart';
 
@@ -28,14 +29,19 @@ class _TrashAdjectivesSectionState
   }
 
   void _add() {
+    if (_atLimit) return;
     ref.read(customTrashAdjectivesProvider.notifier).add(_controller.text);
     _controller.clear();
   }
+
+  bool get _atLimit => ref.read(customTrashAdjectivesProvider).length >=
+      CustomAdjectivesController.maxCount;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final custom = ref.watch(customTrashAdjectivesProvider);
+    final atLimit = custom.length >= CustomAdjectivesController.maxCount;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
@@ -66,10 +72,12 @@ class _TrashAdjectivesSectionState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Ajoute tes propres épithètes (blagues, private jokes…). '
-                  'Elles s\'ajoutent aux ${AdjectiveCatalog.trash.length} '
-                  'épithètes de base, piochées au hasard à la création d\'un '
-                  'joueur sans nom personnalisé.',
+                  'Un mot à la fois : tape une épithète, appuie sur '
+                  '« + », elle devient une petite case ci-dessous (tape '
+                  'dessus pour la retirer). Elles s\'ajoutent aux '
+                  '${AdjectiveCatalog.trash.length} épithètes de base, '
+                  'piochées au hasard à la création d\'un joueur sans nom '
+                  'personnalisé.',
                   style:
                       TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
                 ),
@@ -80,8 +88,11 @@ class _TrashAdjectivesSectionState
                       child: TextField(
                         controller: _controller,
                         maxLength: 24,
-                        decoration: const InputDecoration(
-                          hintText: 'Nouvelle épithète',
+                        enabled: !atLimit,
+                        decoration: InputDecoration(
+                          hintText: atLimit
+                              ? '20 épithètes, le maximum'
+                              : 'Une épithète',
                           counterText: '',
                           isDense: true,
                         ),
@@ -90,10 +101,17 @@ class _TrashAdjectivesSectionState
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
-                      onPressed: _add,
+                      onPressed: atLimit ? null : _add,
                       child: const Icon(Icons.add),
                     ),
                   ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '${custom.length} / ${CustomAdjectivesController.maxCount}',
+                  style: TextStyle(
+                      color: scheme.onSurfaceVariant.withValues(alpha: 0.8),
+                      fontSize: 12),
                 ),
                 if (custom.isNotEmpty) ...[
                   const SizedBox(height: 12),
