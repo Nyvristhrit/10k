@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10K — Compagnon de jeu du 10 000</title>
+<meta name="description" content="Application Android 100% hors ligne qui remplace la feuille de score du jeu de dés 10 000.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #0b0a0f;
+    --bg-1: #141319;
+    --bg-2: #201f2b;
+    --ink: #f4f3f8;
+    --ink-dim: #b8b5c4;
+    --card: rgba(255,255,255,0.045);
+    --card-border: rgba(255,255,255,0.09);
+    --red: #E11D48;
+    --orange: #F97316;
+    --yellow: #FACC15;
+    --green: #22C55E;
+    --blue: #3B82F6;
+    --violet: #8B5CF6;
+    --accent: #6366F1;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: radial-gradient(120% 90% at 50% -10%, var(--bg-2), var(--bg-1) 55%, var(--bg-0) 100%);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+  header.hero {
+    text-align: center;
+    padding: 72px 0 8px;
+  }
+  .dice {
+    font-size: 56px;
+    display: inline-block;
+    animation: bob 3.2s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(-4deg); }
+    50% { transform: translateY(-14px) rotate(4deg); }
+  }
+  .logo {
+    font-size: clamp(64px, 18vw, 128px);
+    font-weight: 900;
+    line-height: 1;
+    margin: 8px 0 4px;
+    letter-spacing: -1px;
+    background: linear-gradient(120deg,
+      var(--red) 0%, var(--red) 20.6%,
+      var(--orange) 20.6%, var(--orange) 35.3%,
+      var(--yellow) 35.3%, var(--yellow) 50%,
+      var(--green) 50%, var(--green) 64.7%,
+      var(--blue) 64.7%, var(--blue) 79.4%,
+      var(--violet) 79.4%, var(--violet) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .tagline {
+    color: var(--ink-dim);
+    font-size: 18px;
+    margin: 0 0 36px;
+  }
+  .cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 17px;
+    text-decoration: none;
+    padding: 16px 30px;
+    border-radius: 999px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-primary {
+    color: #0b0a0f;
+    background: linear-gradient(120deg, #34D399, #10B981);
+    box-shadow: 0 10px 30px -8px rgba(16, 185, 129, 0.55);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 34px -8px rgba(16, 185, 129, 0.7); }
+  .btn-ghost {
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--card-border);
+  }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.22); }
+  .note {
+    text-align: center;
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    max-width: 440px;
+    margin: 0 auto 56px;
+  }
+  .note b { color: var(--ink); }
+  section.features {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 56px;
+  }
+  @media (max-width: 560px) {
+    section.features { grid-template-columns: 1fr; }
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 20px 22px;
+  }
+  .card .emoji { font-size: 26px; display: block; margin-bottom: 10px; }
+  .card h3 { margin: 0 0 6px; font-size: 16px; }
+  .card p { margin: 0; color: var(--ink-dim); font-size: 14px; }
+  h2.section-title {
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin: 0 0 20px;
+  }
+  .steps {
+    counter-reset: step;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 56px;
+    display: grid;
+    gap: 12px;
+  }
+  .steps li {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 14px 18px;
+    font-size: 14.5px;
+    color: var(--ink-dim);
+  }
+  .steps li::before {
+    counter-increment: step;
+    content: counter(step);
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(120deg, var(--violet), var(--accent));
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .steps li b { color: var(--ink); }
+  footer {
+    text-align: center;
+    color: var(--ink-dim);
+    font-size: 13px;
+    padding-top: 12px;
+    border-top: 1px solid var(--card-border);
+  }
+  footer a { color: var(--ink-dim); }
+  footer a:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <span class="dice">🎲</span>
+      <div class="logo">10K</div>
+      <p class="tagline">Compagnon de jeu du 10 000 — 100&nbsp;% hors ligne</p>
+    </header>
+
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/Nyvristhrit/10k/releases/latest/download/10K.apk">
+        ⬇ Télécharger l'APK (Android)
+      </a>
+      <a class="btn btn-ghost" href="https://github.com/Nyvristhrit/10k">
+        Voir le code sur GitHub
+      </a>
+    </div>
+    <p class="note">
+      Distribution directe en attendant la publication sur le <b>Play Store</b>.
+      Android bloque par défaut les APK hors Play Store : voir les 3 étapes
+      d'installation ci-dessous.
+    </p>
+
+    <h2 class="section-title">Ça fait quoi ?</h2>
+    <section class="features">
+      <div class="card">
+        <span class="emoji">🎯</span>
+        <h3>Toutes les règles gérées</h3>
+        <p>Sortie à 300, pile de gains, 3 cœurs, rencontre, dernière chance — l'appli applique les règles à ta place.</p>
+      </div>
+      <div class="card">
+        <span class="emoji">📱</span>
+        <h3>Fait pour la table</h3>
+        <p>Tuiles géantes, scores qui grimpent en s'animant, lisibles de loin, posées au centre du jeu.</p>
+      </div>
+      <div class="card">
+        <span class="emoji">🔒</span>
+        <h3>100&nbsp;% hors ligne</h3>
+        <p>Aucune connexion, aucun compte, aucune donnée envoyée. Tout reste sur le téléphone.</p>
+      </div>
+      <div class="card">
+        <span class="emoji">💀</span>
+        <h3>Un mode caché</h3>
+        <p>Une seconde personnalité de l'appli, plus mordante, à débloquer en secret pour les soirées corsées.</p>
+      </div>
+    </section>
+
+    <h2 class="section-title">Installer l'APK</h2>
+    <ol class="steps">
+      <li>Télécharge le fichier <b>10K.apk</b> avec le bouton ci-dessus (depuis le téléphone, dans Chrome).</li>
+      <li>Ouvre le fichier téléchargé : Android va demander d'<b>autoriser l'installation depuis cette source</b> — accepte.</li>
+      <li>Si « Play Protect » affiche un avertissement, choisis <b>« Installer quand même »</b> — l'appli n'a aucune permission ni connexion, l'avertissement vient juste du fait qu'elle n'est pas encore sur le Play Store.</li>
+    </ol>
+
+    <footer>
+      Imaginé par Ben, vibecodé avec Claude · Licence MIT ·
+      <a href="https://github.com/Nyvristhrit/10k">github.com/Nyvristhrit/10k</a>
+    </footer>
+  </div>
+</body>
+</html>

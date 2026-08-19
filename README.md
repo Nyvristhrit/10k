@@ -7,6 +7,14 @@ tient les scores, les vies et applique les règles à votre place.
 > Fini les feuilles de score : du papier au téléphone. 10K pose le jeu au
 > centre de la table, en grand et en couleurs.
 
+## 📥 Télécharger
+
+En attendant la publication sur le Play Store, l'APK est distribué directement
+via GitHub :
+
+- **[Page de téléchargement](https://nyvristhrit.github.io/10k/)** — le plus simple, avec les étapes d'installation.
+- **[Dernière version (.apk)](https://github.com/Nyvristhrit/10k/releases/latest)** — directement depuis les Releases.
+
 ## ✨ Fonctionnalités
 
 - **Score au centre de la table** : grosses tuiles colorées, un joueur par
