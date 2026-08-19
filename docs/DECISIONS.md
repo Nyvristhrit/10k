@@ -130,6 +130,25 @@
   cache pub ne partagent pas la même racine de lecteur. Coût : compilation
   légèrement plus lente (pas d'incrémental), sans impact sur le résultat.
 
+### A-009 · Distribution via GitHub (Releases + Pages), en attendant le Play Store
+- **Contexte (2026-08-19) :** Ben veut que ses potes puissent installer les
+  dernières versions sans attendre la publication Play Store (compte payant,
+  keystore officiel — cf. BACKLOG). `gh` CLI installé (winget) et authentifié
+  sur sa machine (device flow OAuth officiel GitHub, jeton dans le trousseau
+  Windows).
+- **Choix :** dépôt public [Nyvristhrit/10k](https://github.com/Nyvristhrit/10k).
+  Chaque version = une **Release** GitHub taguée `vX.Y.Z`, avec l'APK release
+  attaché en asset nommé **exactement `10K.apk`**. Page de téléchargement
+  statique (`docs/index.html`) servie par **GitHub Pages** depuis
+  `main:/docs`, dont le bouton pointe vers
+  `.../releases/latest/download/10K.apk` (URL stable de GitHub qui suit
+  toujours la dernière Release, tant que le nom d'asset ne change pas).
+- **Raison :** zéro infra à maintenir, gratuit, et le lien de téléchargement
+  ne casse jamais d'une version à l'autre. `10K.apk` à la racine du dépôt
+  reste gitignoré (trop lourd) — copié à la main avant chaque
+  `gh release create`.
+- **Détail :** procédure de publication pas à pas en fin de `CHANGELOG.md`.
+
 ### A-002 · Undo par valeurs stockées
 - **Choix :** chaque `GameEffect` stocke `previousValue`/`nextValue`. L'annulation ré-applique
   les `previousValue` plutôt que de recalculer.

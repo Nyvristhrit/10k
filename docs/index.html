@@ -179,6 +179,85 @@
   footer a { color: var(--ink-dim); }
   footer a:hover { color: var(--ink); }
 
+  .version-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink-dim);
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    padding: 5px 14px;
+    margin-bottom: 22px;
+  }
+  .version-pill .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #34D399;
+    box-shadow: 0 0 8px 1px rgba(52, 211, 153, 0.7);
+  }
+  .changelog {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    margin-bottom: 56px;
+    overflow: hidden;
+  }
+  .changelog summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 18px 22px;
+    font-weight: 700;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .changelog summary::-webkit-details-marker { display: none; }
+  .changelog summary::after {
+    content: '▾';
+    color: var(--ink-dim);
+    transition: transform 0.2s ease;
+  }
+  .changelog[open] summary::after { transform: rotate(180deg); }
+  .changelog .entries {
+    padding: 0 22px 20px;
+    border-top: 1px solid var(--card-border);
+  }
+  .changelog .version {
+    padding-top: 16px;
+  }
+  .changelog .version h4 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .changelog .version .date {
+    font-weight: 400;
+    color: var(--ink-dim);
+    font-size: 12.5px;
+  }
+  .changelog ul {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .changelog .more {
+    display: block;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .changelog .more:hover { text-decoration: underline; }
+
   /* Fond animé : des dés qui tombent doucement, comme sur l'accueil de
      l'appli (`shared/animations/falling_dice.dart`). Purement CSS, un peu
      flous et estompés pour rester en arrière-plan, jamais gênants. */
@@ -262,6 +341,7 @@
         <text x="120" y="98" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="112" fill="url(#stripes)" stroke="url(#stripes)" stroke-width="5" stroke-linejoin="round" paint-order="stroke fill">10K</text>
       </svg>
       <p class="tagline">Compagnon de jeu du 10 000 — 100&nbsp;% hors ligne</p>
+      <span class="version-pill"><span class="dot"></span> Version actuelle : v1.2.0</span>
     </header>
 
     <div class="cta">
@@ -308,6 +388,33 @@
       <li><span>Ouvre le fichier téléchargé : Android va demander d'<b>autoriser l'installation depuis cette source</b> — accepte.</span></li>
       <li><span>Si « Play Protect » affiche un avertissement, choisis <b>« Installer quand même »</b> — l'appli n'a aucune permission ni connexion, l'avertissement vient juste du fait qu'elle n'est pas encore sur le Play Store.</span></li>
     </ol>
+
+    <details class="changelog">
+      <summary>📋 Nouveautés et historique des versions</summary>
+      <div class="entries">
+        <div class="version">
+          <h4>v1.2.0 <span class="date">19 août 2026</span></h4>
+          <ul>
+            <li>Éditeur d'épithètes trash (réglages) clarifié et plafonné à 20.</li>
+            <li>Corrections visuelles de cette page (logo, mode paysage).</li>
+          </ul>
+        </div>
+        <div class="version">
+          <h4>v1.1.0 <span class="date">19 août 2026</span></h4>
+          <ul>
+            <li>Correction : les vies se restaurent bien à 3 quand une rencontre vide entièrement la pile d'un joueur.</li>
+            <li>Toggle du mode trash rendu plus visible.</li>
+            <li>Noms de joueur par défaut façon totem scout (espèce + épithète), avec éditeur d'épithètes perso en mode trash.</li>
+            <li>Écran toujours allumé pendant la partie (réglable).</li>
+            <li>Mode paysage pour utilisation sur tablette.</li>
+            <li>Première mise à disposition publique (dépôt GitHub, cette page).</li>
+          </ul>
+        </div>
+        <a class="more" href="https://github.com/Nyvristhrit/10k/blob/main/CHANGELOG.md">
+          Voir l'historique complet et les versions précédentes →
+        </a>
+      </div>
+    </details>
 
     <footer>
       Imaginé par Ben, vibecodé avec Claude · Licence MIT ·
