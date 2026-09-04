@@ -1,21 +1,26 @@
 # BACKLOG — 10K
 
-> Ce qui reste à faire, classé par thème. Mis à jour le 19 août 2026.
+> Ce qui reste à faire, classé par thème. Mis à jour le 4 septembre 2026.
 > **Pour le détail de ce qui a déjà été livré (dont tout ce qui était encore
-> listé ici en juillet), voir `CHANGELOG.md`** — quasiment tout le « ressenti
-> wow » et l'écran de paramètres ci-dessous sont faits depuis. Ce fichier ne
-> garde que ce qui reste réellement ouvert.
+> listé ici en juillet/août), voir `CHANGELOG.md`** — le « ressenti wow »,
+> l'écran de paramètres, l'historique de partie, le plateau de dés, les
+> statistiques et les alias joueur sont faits depuis. Ce fichier ne garde que
+> ce qui reste réellement ouvert.
 
 ---
 
 ## ⚙️ Fonctionnalités manquantes
 
-- [ ] **Écran d'historique** détaillé (§18) : liste chronologique des actions,
-      rencontres, gains annulés, filtre par joueur.
-- [ ] **Écran des parties terminées** (§20.8) + « Rejouer avec les mêmes
-      noms » (§20.7).
+- [ ] **Écran des parties terminées** (§20.8) : liste chronologique des
+      parties passées (une ligne par partie — date, joueurs, gagnant), à
+      distinguer de l'écran « Stats & records » (déjà fait, bilan agrégé) et
+      « Alias & profils » (déjà fait, bilan par personne) qui ne montrent pas
+      le détail partie par partie.
+- [ ] **« Rejouer avec les mêmes noms »** (§20.7) depuis cet écran, une fois
+      qu'il existe.
 - [ ] **Suppression de toutes les données locales** dans un écran de réglages
-      généraux (§37).
+      généraux (§37) — d'autant plus utile maintenant qu'une partie terminée
+      n'est plus jamais effacée automatiquement (cf. DECISIONS A-010).
 
 ## 📦 Livraison / release
 
@@ -46,6 +51,7 @@
 ---
 
 ## Idées post-V1 (rappel spec §38)
-Calculateur de combinaisons de dés, sélection visuelle des dés, profils de
-règles maison, réaction en chaîne configurable, sons/voix, statistiques,
-export, iOS…
+Calculateur de combinaisons de dés (deviner/valider une combinaison à partir
+des valeurs du plateau de dés virtuel — la sélection visuelle des dés et les
+statistiques, elles, sont faites), profils de règles maison, réaction en
+chaîne configurable, sons/voix, export, iOS…

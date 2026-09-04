@@ -149,6 +149,47 @@
   `gh release create`.
 - **Détail :** procédure de publication pas à pas en fin de `CHANGELOG.md`.
 
+### A-010 · Les parties terminées ne sont plus jamais effacées automatiquement
+- **Contexte (2026-09-04) :** avant l'écran de statistiques, `GameController.newGame`
+  effaçait systématiquement la partie précédente (`_repo.deleteGame(previous.id)`),
+  y compris une partie **terminée** — il n'y avait donc jamais qu'une seule
+  partie sur l'appareil, et `GameRepository.loadFinishedGames()` restait
+  inutilisé en pratique (toujours vide dès qu'une nouvelle partie démarrait).
+- **Choix :** ne plus effacer que les parties **abandonnées** (statut `setup`
+  ou `inProgress`/`finalChance`) ; une partie `finished`/`archived` est
+  conservée indéfiniment sous `<documents>/games/<id>.json`.
+- **Raison :** c'est le prérequis de tout historique multi-parties (§
+  [GameStats], écran « Stats & records », écran « Alias & profils »). Pas de
+  souci de volume anticipé (petits fichiers JSON, usage perso) ; pas d'écran
+  pour purger cet historique pour l'instant (voir BACKLOG « suppression de
+  toutes les données locales »).
+- **À surveiller :** si un jour le nombre de parties devient gênant (très
+  hypothétique pour un usage perso), prévoir soit une purge manuelle, soit un
+  plafond avec rotation.
+
+### A-011 · Mélanger une couleur aléatoire toujours vers du noir/blanc STRICTEMENT neutre
+- **Contexte (2026-09-04) :** le plateau de dés tire une teinte au hasard à
+  chaque ouverture (§ évolution « dés colorés »). Une première version
+  assombrissait la face du dé en mode trash en mélangeant l'accent tiré avec
+  `0xFF0A0010` (un noir *légèrement* teinté bleu-violet), et l'encre des
+  points en mode sage avec `0xFF2A2433` (même défaut). Résultat signalé par
+  Ben : certains tirages (orange, jaune) donnaient des dés marron ou
+  « caca d'oie », pas du tout d'après le rendu voulu — alors que rose, vert,
+  violet, cyan rendaient très bien.
+- **Cause :** mélanger deux teintes non neutres entre elles (même un noir à
+  peine teinté) revient à mélanger deux couleurs du cercle chromatique — le
+  résultat dépend fortement de la paire, et certaines combinaisons (orange +
+  bleu-violet, notamment) donnent des tons ternes/marron, un effet de
+  mélange soustractif bien connu (cf. couleurs complémentaires qui se
+  neutralisent en un gris/brun plutôt qu'en blanc, comme en peinture).
+- **Choix :** toujours mélanger une couleur aléatoire avec du **blanc pur**
+  (`Colors.white`) ou un **noir strictement neutre** (R=V=B, ex.
+  `0xFF141414`) — jamais avec une couleur de fond fixe (même sombre) qui a sa
+  propre teinte. Constante `_neutralInk` dans `dice_tray_screen.dart`.
+- **Reste applicable ailleurs :** toute future palette générée aléatoirement
+  et mélangée à un fond fixe (mat, carte, dégradé…) doit suivre la même
+  règle — vérifier que le fond de mélange est neutre, pas juste « sombre ».
+
 ### A-002 · Undo par valeurs stockées
 - **Choix :** chaque `GameEffect` stocke `previousValue`/`nextValue`. L'annulation ré-applique
   les `previousValue` plutôt que de recalculer.

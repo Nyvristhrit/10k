@@ -10,6 +10,39 @@
 > techniques justifiés), `docs/BACKLOG.md` (reste à faire) et
 > `docs/SPECIFICATION.md` (règles du jeu détaillées).
 
+## [v1.4.0] — 2026-09-04
+
+### Ajouté
+- **Stats & records** (bouton sur l'accueil) : bilan calculé à partir de
+  *toutes* les parties terminées conservées sur l'appareil — parties jouées,
+  temps de jeu cumulé, tours joués, rencontres déclenchées, **manches
+  moyennes par score cible** (5 000/10 000/15 000…), plus gros carton, partie
+  la plus longue (`GameStats`, `lib/domain/services/game_stats.dart`).
+- **Une partie terminée n'est plus jamais effacée automatiquement.** Avant
+  cette évolution, `GameController.newGame` effaçait systématiquement la
+  partie précédente (y compris terminée) dès qu'une nouvelle partie
+  démarrait : l'historique ne pouvait donc jamais s'accumuler. Seules les
+  parties **abandonnées** (encore en préparation ou en cours) sont
+  désormais effacées — voir DECISIONS A-010.
+- **Alias joueur** : un petit bouton sous le nom de chaque totem (écran de
+  préparation) permet de fixer un alias stable (`@Ben`), distinct du nom
+  tiré au hasard — avec une modalité de sélection rapide parmi les alias déjà
+  utilisés. Les statistiques utilisent l'alias en priorité sur le totem du
+  jour, qui n'a sinon aucune valeur d'une partie à l'autre.
+- **Écran « Alias & profils »** (icône à côté du « ? » sur l'accueil) :
+  liste chaque alias avec son nombre de victoires ; permet de le renommer
+  (répercuté automatiquement sur tout l'historique des parties), de lui
+  choisir une couleur perso, de le supprimer, ou d'en créer un nouveau
+  directement depuis cet écran.
+
+### Corrigé
+- **Dés marron/olive ratés selon la teinte tirée** (la palette aléatoire
+  ajoutée en v1.3.3) : le noir utilisé pour assombrir la face (trash) et
+  l'encre des points (sage) n'était pas strictement neutre (légère teinte
+  bleu-violet) — mélangé à un orange ou un jaune, ça tournait au
+  marron/caca d'oie. Remplacé par un noir strictement neutre partout (voir
+  DECISIONS A-011).
+
 ## [v1.3.3] — 2026-09-04
 
 > Plusieurs allers-retours le même jour (builds `+2` à `+5`) — la version
