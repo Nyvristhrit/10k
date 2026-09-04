@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../app/theme/app_theme.dart';
 import '../../app/theme/tenk_skin.dart';
 import '../../shared/widgets/app_background.dart';
 
@@ -33,6 +34,16 @@ class _DiceTrayScreenState extends State<DiceTrayScreen> {
 
   int _tokenSeed = 0;
   bool _hasRolled = false;
+
+  /// Teinte tirée au hasard à l'ouverture de cet écran (comme l'accent
+  /// général de l'appli) : des dés roses, violets, cyan… selon l'ouverture,
+  /// adaptés au mode trash ou sage. Figée une fois choisie (pas de retirage
+  /// à chaque reconstruction).
+  Color? _accent;
+  Color _accentFor(bool trash) {
+    final palette = trash ? AppTheme.trashAccentSeeds : AppTheme.accentSeeds;
+    return _accent ??= palette[_random.nextInt(palette.length)];
+  }
 
   int get _heldCount => _held.where((h) => h).length;
   bool get _anyHeld => _heldCount > 0;
@@ -114,15 +125,23 @@ class _DiceTrayScreenState extends State<DiceTrayScreen> {
   /// s'adapte à la place disponible (portrait comme paysage).
   Widget _mat(BuildContext context) {
     final trash = TenkSkin.of(context).trash;
+    final accent = _accentFor(trash);
     final matColor = trash ? const Color(0xFF1A0026) : const Color(0xFF0F3D2E);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: matColor,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color.lerp(matColor, accent, 0.28)!, matColor],
+        ),
         borderRadius: BorderRadius.circular(28),
-        boxShadow: const [
-          BoxShadow(color: Colors.black38, blurRadius: 20, offset: Offset(0, 8)),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+        boxShadow: [
+          const BoxShadow(
+              color: Colors.black38, blurRadius: 20, offset: Offset(0, 8)),
+          BoxShadow(color: accent.withValues(alpha: 0.18), blurRadius: 30),
         ],
       ),
       child: LayoutBuilder(
@@ -147,6 +166,7 @@ class _DiceTrayScreenState extends State<DiceTrayScreen> {
                     held: _held[i],
                     spinToken: _spinTokens[i],
                     size: dieSize,
+                    accent: accent,
                     onTap: () => _toggleHold(i),
                   ),
               ],
@@ -166,6 +186,7 @@ class _Die extends StatefulWidget {
     required this.held,
     required this.spinToken,
     required this.size,
+    required this.accent,
     required this.onTap,
     super.key,
   });
@@ -174,6 +195,10 @@ class _Die extends StatefulWidget {
   final bool held;
   final int spinToken;
   final double size;
+
+  /// Teinte tirée au hasard à l'ouverture du plateau (voir
+  /// `_DiceTrayScreenState._accentFor`).
+  final Color accent;
   final VoidCallback onTap;
 
   @override
@@ -213,8 +238,14 @@ class _DieState extends State<_Die> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     final trash = TenkSkin.of(context).trash;
     final skin = TenkSkin.of(context);
-    final base = trash ? const Color(0xFF2A0033) : const Color(0xFFFFFDF6);
-    final pip = trash ? skin.neon : const Color(0xFF2A2433);
+    // Face et points teintés par l'accent tiré à l'ouverture — des dés roses,
+    // violets, cyan… selon la partie, un peu comme le reste de la DA.
+    final base = trash
+        ? Color.lerp(const Color(0xFF0A0010), widget.accent, 0.32)!
+        : Color.lerp(Colors.white, widget.accent, 0.20)!;
+    final pip = trash
+        ? Color.lerp(widget.accent, Colors.white, 0.25)!
+        : Color.lerp(const Color(0xFF2A2433), widget.accent, 0.15)!;
 
     return GestureDetector(
       onTap: widget.onTap,
