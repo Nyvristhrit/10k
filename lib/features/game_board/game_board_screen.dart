@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -12,10 +13,12 @@ import '../../domain/services/trash_targets.dart';
 import '../../shared/trash/trash_taunts.dart';
 import '../../shared/turn_phrases.dart';
 import '../../shared/widgets/app_background.dart';
+import '../dice_tray/dice_tray_screen.dart';
 import '../game_result/game_result_screen.dart';
 import '../info/info_screen.dart';
 import '../score_entry/score_entry_sheet.dart';
 import 'game_actions.dart';
+import 'game_history_screen.dart';
 import 'widgets/player_board_tile.dart';
 
 /// Plateau de jeu interactif (§8, §9, §10, §12).
@@ -92,6 +95,18 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
       appBar: AppBar(
         title: Text(_title(game)),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.casino_outlined),
+            tooltip: 'Lancer des dés',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const DiceTrayScreen()),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.history),
+            tooltip: 'Historique de la partie',
+            onPressed: () => _openHistory(context),
+          ),
           IconButton(
             icon: const Icon(Icons.undo),
             tooltip: 'Annuler la dernière action',
@@ -330,6 +345,13 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _openHistory(BuildContext context) {
+    HapticFeedback.mediumImpact();
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const GameHistoryScreen()),
     );
   }
 
