@@ -78,4 +78,25 @@ class GameController extends AsyncNotifier<GameState?> {
   Future<EngineResult> leaveGame(String id) =>
       dispatch(LeaveGame(playerId: id));
   Future<EngineResult> undo() => dispatch(const UndoLastAction());
+
+  /// Revient à l'état juste après l'action [actionId] (écran d'historique) :
+  /// annule une par une toutes les actions plus récentes, dans l'ordre
+  /// inverse, en réutilisant l'annulation atomique déjà testée du moteur.
+  /// Renvoie `false` sans rien modifier si l'action est introuvable ou déjà
+  /// annulée.
+  Future<bool> revertToAction(String actionId) async {
+    var current = state.value;
+    if (current == null) return false;
+    if (!current.actions.any((a) => a.id == actionId && !a.isUndone)) {
+      return false;
+    }
+    while (current!.lastActiveAction?.id != actionId) {
+      final result = _engine.apply(current, const UndoLastAction());
+      if (result is! Success) return false;
+      current = result.transition.nextState;
+    }
+    await _repo.saveSnapshot(current);
+    state = AsyncData(current);
+    return true;
+  }
 }
