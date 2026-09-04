@@ -3,12 +3,53 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../app/theme/app_theme.dart';
 import '../../app/theme/tenk_skin.dart';
 import '../../shared/widgets/app_background.dart';
 
 /// Nombre de dés du 10 000.
 const int _kDiceCount = 6;
+
+/// Palette dédiée aux dés : 12 teintes réparties **également** sur le cercle
+/// chromatique (pas de mode/violet qui revient trop souvent — contrairement à
+/// la palette d'accent générale de l'appli, plus resserrée sur les
+/// bleus/violets). Générée en HSL plutôt que recopiée à la main : la
+/// répartition égale garantit que deux tirages ne se ressemblent jamais trop,
+/// et la saturation/luminosité sont réglées pour rester chatoyantes sans
+/// virer criardes (mode sage) ou repousser vers le pastel (mode trash, plus
+/// saturé pour le ton néon).
+List<Color> _evenlySpacedPalette({
+  required int count,
+  required double saturation,
+  required double lightness,
+  double offsetDegrees = 0,
+}) {
+  final step = 360 / count;
+  return [
+    for (var i = 0; i < count; i++)
+      HSLColor.fromAHSL(1, (offsetDegrees + i * step) % 360, saturation, lightness)
+          .toColor(),
+  ];
+}
+
+final List<Color> _diceAccentSeeds =
+    _evenlySpacedPalette(count: 12, saturation: 0.68, lightness: 0.56);
+final List<Color> _diceTrashAccentSeeds = _evenlySpacedPalette(
+    count: 12, saturation: 0.92, lightness: 0.55, offsetDegrees: 15);
+
+/// Noir strictement neutre (R=V=B), pour mélanger un accent sans jamais le
+/// tirer vers une autre teinte — un noir même très légèrement bleuté ou
+/// violacé suffit à faire virer un orange/jaune vers le marron ou l'olive
+/// une fois mélangé.
+const Color _neutralInk = Color(0xFF141414);
+
+/// Teinte opposée sur le cercle chromatique (rotation de 180° en HSL) — un
+/// magenta appelle un vert, un cyan appelle un orange, etc. Utilisée pour que
+/// les points d'un dé (et son liseré « gardé ») ressortent nettement de sa
+/// face au lieu de s'y fondre.
+Color _complementaryHue(Color c) {
+  final hsl = HSLColor.fromColor(c);
+  return hsl.withHue((hsl.hue + 180) % 360).toColor();
+}
 
 /// Plateau de dés virtuel (§ évolution « jouer sans dés physiques »).
 ///
@@ -34,14 +75,14 @@ class _DiceTrayScreenState extends State<DiceTrayScreen> {
 
   int _tokenSeed = 0;
   bool _hasRolled = false;
+  bool _pressed = false;
 
-  /// Teinte tirée au hasard à l'ouverture de cet écran (comme l'accent
-  /// général de l'appli) : des dés roses, violets, cyan… selon l'ouverture,
-  /// adaptés au mode trash ou sage. Figée une fois choisie (pas de retirage
-  /// à chaque reconstruction).
+  /// Teinte tirée au hasard à l'ouverture de cet écran, dans la palette dédiée
+  /// aux dés (voir plus haut) — figée une fois choisie (pas de retirage à
+  /// chaque reconstruction).
   Color? _accent;
   Color _accentFor(bool trash) {
-    final palette = trash ? AppTheme.trashAccentSeeds : AppTheme.accentSeeds;
+    final palette = trash ? _diceTrashAccentSeeds : _diceAccentSeeds;
     return _accent ??= palette[_random.nextInt(palette.length)];
   }
 
@@ -73,6 +114,8 @@ class _DiceTrayScreenState extends State<DiceTrayScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final trash = TenkSkin.of(context).trash;
+    final accent = _accentFor(trash);
     final unheld = _kDiceCount - _heldCount;
     final label = !_hasRolled
         ? 'Lancer les dés'
@@ -97,22 +140,14 @@ class _DiceTrayScreenState extends State<DiceTrayScreen> {
                       color: Theme.of(context).colorScheme.onSurfaceVariant),
                 ),
                 const SizedBox(height: 16),
-                Expanded(child: _mat(context)),
+                Expanded(child: _mat(context, accent)),
                 const SizedBox(height: 16),
                 if (_anyHeld)
                   TextButton(
                     onPressed: _releaseAll,
                     child: const Text('Tout libérer'),
                   ),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: unheld == 0 ? null : _roll,
-                    child: Text(label,
-                        style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w800)),
-                  ),
-                ),
+                _rollButton(context, accent, label, unheld),
               ],
             ),
           ),
@@ -121,27 +156,82 @@ class _DiceTrayScreenState extends State<DiceTrayScreen> {
     );
   }
 
-  /// Le tapis : un fond distinct posé sous les dés, avec une grille 3×2 qui
-  /// s'adapte à la place disponible (portrait comme paysage).
-  Widget _mat(BuildContext context) {
+  /// Le bouton de lancer : teinté par l'accent de la session (mélangé au
+  /// blanc/noir uniquement — jamais à une autre teinte fixe, pour ne jamais
+  /// retomber sur un mélange terreux), avec un petit rebond au clic.
+  Widget _rollButton(
+      BuildContext context, Color accent, String label, int unheld) {
+    final enabled = unheld > 0;
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final buttonColor = Color.lerp(accent, dark ? Colors.black : Colors.white,
+        dark ? 0.25 : 0.15)!;
+    final onButtonColor =
+        ThemeData.estimateBrightnessForColor(buttonColor) == Brightness.dark
+            ? Colors.white
+            : Colors.black;
+
+    return GestureDetector(
+      onTapDown: enabled ? (_) => setState(() => _pressed = true) : null,
+      onTapUp: enabled ? (_) => setState(() => _pressed = false) : null,
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: enabled ? _roll : null,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(60),
+              backgroundColor: buttonColor,
+              disabledBackgroundColor: buttonColor.withValues(alpha: 0.35),
+              foregroundColor: onButtonColor,
+              disabledForegroundColor: onButtonColor.withValues(alpha: 0.6),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              elevation: enabled ? 6 : 0,
+              shadowColor: accent.withValues(alpha: 0.6),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(_hasRolled ? '🎲' : '✋', style: const TextStyle(fontSize: 22)),
+                const SizedBox(width: 10),
+                Text(label,
+                    style: const TextStyle(
+                        fontSize: 18, fontWeight: FontWeight.w800)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Le tapis : un fond neutre et stable posé sous les dés (jamais teinté par
+  /// l'accent — le mélanger à une couleur fixe est ce qui donnait des tons
+  /// terreux ratés selon la teinte tirée). La couleur de la session vit
+  /// uniquement sur les dés eux-mêmes. Grille 3×2 qui s'adapte à la place
+  /// disponible (portrait comme paysage).
+  Widget _mat(BuildContext context, Color accent) {
     final trash = TenkSkin.of(context).trash;
-    final accent = _accentFor(trash);
-    final matColor = trash ? const Color(0xFF1A0026) : const Color(0xFF0F3D2E);
+    final matColor = trash ? const Color(0xFF1A0026) : const Color(0xFF122A22);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color.lerp(matColor, accent, 0.28)!, matColor],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color.lerp(matColor, Colors.black, 0.15)!,
+            matColor,
+          ],
         ),
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: accent.withValues(alpha: 0.35)),
-        boxShadow: [
-          const BoxShadow(
-              color: Colors.black38, blurRadius: 20, offset: Offset(0, 8)),
-          BoxShadow(color: accent.withValues(alpha: 0.18), blurRadius: 30),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+        boxShadow: const [
+          BoxShadow(color: Colors.black38, blurRadius: 20, offset: Offset(0, 8)),
         ],
       ),
       child: LayoutBuilder(
@@ -237,15 +327,25 @@ class _DieState extends State<_Die> with SingleTickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     final trash = TenkSkin.of(context).trash;
-    final skin = TenkSkin.of(context);
-    // Face et points teintés par l'accent tiré à l'ouverture — des dés roses,
-    // violets, cyan… selon la partie, un peu comme le reste de la DA.
+    // Face teintée par l'accent tiré à l'ouverture — des dés roses, violets,
+    // cyan… selon la partie, un peu comme le reste de la DA.
+    // Mélangé au NOIR NEUTRE seulement (jamais à un noir teinté — c'est
+    // justement ce genre de mélange entre deux teintes non liées qui donnait
+    // des dés marron/olive ratés selon l'accent tiré, signalé par Ben).
     final base = trash
-        ? Color.lerp(const Color(0xFF0A0010), widget.accent, 0.32)!
+        ? Color.lerp(_neutralInk, widget.accent, 0.32)!
         : Color.lerp(Colors.white, widget.accent, 0.20)!;
+    // Les points ET le liseré « gardé » prennent la même teinte
+    // COMPLÉMENTAIRE de cet accent (opposée sur le cercle chromatique) :
+    // les deux ressortent nettement de la face au lieu de s'y fondre, et
+    // restent cohérents entre eux (signalé : ils ne matchaient pas).
+    final complement = _complementaryHue(widget.accent);
     final pip = trash
-        ? Color.lerp(widget.accent, Colors.white, 0.25)!
-        : Color.lerp(const Color(0xFF2A2433), widget.accent, 0.15)!;
+        ? Color.lerp(complement, Colors.white, 0.2)!
+        : Color.lerp(_neutralInk, complement, 0.55)!;
+    final heldRing = trash
+        ? Color.lerp(complement, Colors.white, 0.15)!
+        : complement;
 
     return GestureDetector(
       onTap: widget.onTap,
@@ -277,13 +377,12 @@ class _DieState extends State<_Die> with SingleTickerProviderStateMixin {
                       base,
                     ],
                   ),
-                  border: widget.held
-                      ? Border.all(color: skin.neonAlt, width: 3)
-                      : null,
+                  border:
+                      widget.held ? Border.all(color: heldRing, width: 3) : null,
                   boxShadow: [
                     BoxShadow(
                       color: widget.held
-                          ? skin.neonAlt.withValues(alpha: 0.55)
+                          ? heldRing.withValues(alpha: 0.55)
                           : Colors.black45,
                       blurRadius: widget.held ? 16 : 6,
                       offset: const Offset(2, 4),
