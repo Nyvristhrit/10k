@@ -10,6 +10,25 @@
 > techniques justifiés), `docs/BACKLOG.md` (reste à faire) et
 > `docs/SPECIFICATION.md` (règles du jeu détaillées).
 
+## [v1.3.3] — 2026-09-04
+
+### Corrigé
+- **Noms de joueur tronqués** (mode trash surtout, où espèce + épithète
+  cumulent) : le nom sur la tuile était coupé en plein mot avec des « ... »
+  sur les écrans où la tuile est étroite, jusqu'à 34 caractères dans le pire
+  cas (ex. « Blaireau d'Europe Raclure de bidet »). La tuile
+  (`player_board_tile.dart`) rétrécit maintenant le texte pour qu'il tienne
+  en entier (`FittedBox`) au lieu de le tronquer — verrouillé par un test
+  dédié.
+
+### Modifié
+- **Catalogue resserré** : suppression des variantes d'espèces et
+  d'épithètes les plus longues quand une alternative plus courte existait
+  déjà dans la même famille (ex. « Blaireau d'Europe » → « Blaireau »,
+  « Superstitieux·se » retirée du pool sage) — le pire cas passe de 34 à 29-31
+  caractères. Le `FittedBox` ci-dessus reste la protection définitive contre
+  tout mot encore trop long.
+
 ## [v1.3.2] — 2026-09-04
 
 ### Corrigé
