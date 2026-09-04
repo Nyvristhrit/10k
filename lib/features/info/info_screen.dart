@@ -282,9 +282,7 @@ class _InfoScreenState extends ConsumerState<InfoScreen> {
         const SizedBox(height: 12),
         Center(
           child: Text(
-              _packageInfo == null
-                  ? ' '
-                  : 'Version ${_packageInfo!.version} (${_packageInfo!.buildNumber})',
+              _packageInfo == null ? ' ' : 'Version ${_packageInfo!.version}',
               style: TextStyle(
                   color: Theme.of(context)
                       .colorScheme

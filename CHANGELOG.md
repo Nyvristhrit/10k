@@ -10,6 +10,14 @@
 > techniques justifiés), `docs/BACKLOG.md` (reste à faire) et
 > `docs/SPECIFICATION.md` (règles du jeu détaillées).
 
+## [v1.3.2] — 2026-09-04
+
+### Corrigé
+- Onglet « À propos » : la version affichait le numéro de build technique
+  entre parenthèses (« Version 1.3.1 (2) ») en plus du numéro de version —
+  confusant, sans utilité pour le joueur. N'affiche plus que « Version
+  1.3.2 ».
+
 ## [v1.3.1] — 2026-09-04
 
 ### Ajouté
