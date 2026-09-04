@@ -107,6 +107,18 @@
     border: 1px solid var(--card-border);
   }
   .btn-ghost:hover { border-color: rgba(255,255,255,0.22); }
+  .support-link {
+    text-align: center;
+    margin: 0 0 22px;
+  }
+  .support-link a {
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    text-decoration: none;
+    border-bottom: 1px dashed var(--card-border);
+    padding-bottom: 1px;
+  }
+  .support-link a:hover { color: var(--ink); border-color: var(--ink-dim); }
   .note {
     text-align: center;
     color: var(--ink-dim);
@@ -350,7 +362,7 @@
         <text x="120" y="98" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="112" fill="url(#stripes)" stroke="url(#stripes)" stroke-width="5" stroke-linejoin="round" paint-order="stroke fill">10K</text>
       </svg>
       <p class="tagline">Compagnon de jeu du 10 000 — 100&nbsp;% hors ligne</p>
-      <span class="version-pill"><span class="dot"></span> Version actuelle : v1.3.0</span>
+      <span class="version-pill"><span class="dot"></span> Version actuelle : v1.3.1</span>
     </header>
 
     <div class="cta">
@@ -361,6 +373,9 @@
         Voir le code sur GitHub
       </a>
     </div>
+    <p class="support-link">
+      <a href="https://ko-fi.com/qubestudio" target="_blank" rel="noopener">☕ Offrir un café sur Ko-fi</a>
+    </p>
     <p class="note">
       Distribution directe en attendant la publication sur le <b>Play Store</b>.
       Android bloque par défaut les APK hors Play Store : voir les 3 étapes

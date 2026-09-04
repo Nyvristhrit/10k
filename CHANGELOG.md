@@ -10,6 +10,27 @@
 > techniques justifiés), `docs/BACKLOG.md` (reste à faire) et
 > `docs/SPECIFICATION.md` (règles du jeu détaillées).
 
+## [v1.3.1] — 2026-09-04
+
+### Ajouté
+- **Lien de soutien (Ko-fi)** : carte « Envie de soutenir le projet ? » dans
+  l'onglet « À propos » de l'appli (ouvre `ko-fi.com/qubestudio` dans le
+  navigateur via `url_launcher`), et lien discret sous le bouton de
+  téléchargement sur la page GitHub Pages. Purement facultatif, aucune
+  donnée envoyée par ailleurs — cohérent avec le « 100 % hors ligne ».
+
+### Modifié
+- **Poids des épithètes perso (mode trash)** : les épithètes ajoutées à la
+  table dans les réglages comptent maintenant **deux fois** dans le tirage
+  du nom par défaut, face au catalogue de base (`GameEngine._scoutName`,
+  dupliquées dans le pool avant tirage — verrouillé par un test dédié).
+  Avant ce correctif, elles se noyaient dans les ~70 épithètes du catalogue
+  et sortaient trop rarement.
+- **Catalogue d'épithètes trash retravaillé par Ben** (`adjective_catalog.dart`) :
+  liste resserrée (les personnalisées sortent d'autant plus souvent grâce au
+  poids double ci-dessus) et ton plus mordant. Le catalogue sage est passé à
+  une écriture inclusive (`·`).
+
 ## [v1.3.0] — 2026-09-04
 
 ### Ajouté
