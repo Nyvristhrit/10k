@@ -10,6 +10,34 @@
 > techniques justifiés), `docs/BACKLOG.md` (reste à faire) et
 > `docs/SPECIFICATION.md` (règles du jeu détaillées).
 
+## [v1.5.0] — 2026-09-04
+
+### Corrigé
+- **Dernière chance : la revanche n'existait pas.** La règle V1 (spec §16.4,
+  Annexe C.5) posait qu'un candidat délogé « ne reçoit pas de nouveau tour »
+  — un seul passage par joueur. Ben a précisé la règle réellement jouée à
+  table : si A est délogé par B, puis que B n'est pas délogé par C, **A doit
+  pouvoir retenter sa chance** contre B, et ainsi de suite sans limite.
+  Chaque délogement relance désormais une manche complète de dernière chance
+  pour tous les autres joueurs actifs (y compris le camp délogé) ; la phase
+  ne se termine que quand un candidat traverse un tour complet sans être
+  délogé. Voir DECISIONS A-012.
+
+### Ajouté
+- **Fenêtre « Quoi de neuf »** à l'ouverture de l'appli après une mise à
+  jour : résume les nouveautés de(s) version(s) notable(s) manquée(s), une
+  seule fois, jamais au tout premier lancement (rien à rattraper). Catalogue
+  dédié (`whats_new_catalog.dart`), volontairement distinct de ce fichier :
+  n'y figurent que les versions avec un changement visible pour un joueur,
+  comme sur la page de téléchargement (même logique que pour v1.2.1, déjà
+  exclue de la page publique).
+
+### Modifié
+- Page de téléchargement : le bouton « Offrir un café sur Ko-fi » était un
+  simple lien discret, peu visible — devenu un vrai bouton (pilule rose,
+  plus grand), à la demande de Ben. Le bouton équivalent dans l'appli
+  (écran « À propos ») restait déjà bien visible, inchangé.
+
 ## [v1.4.0] — 2026-09-04
 
 ### Ajouté
@@ -232,6 +260,14 @@ pour le détail commit par commit :
    mineur/cosmétique (ex. v1.2.1) reste dans ce fichier et l'historique Git,
    mais ne mérite pas sa propre entrée sur la page publique — sinon la liste
    s'allonge trop vite. Dans le doute, ne pas ajouter d'entrée sur la page.
-6. `gh` est déjà installé et authentifié sur la machine de Ben (compte
+6. Si l'étape 5 ajoute une entrée : ajouter la **même** entrée à
+   `lib/data/catalogs/whats_new_catalog.dart` (`WhatsNewCatalog.releases`,
+   dans l'ordre chronologique, la plus récente en dernier). C'est ce
+   catalogue qui alimente la fenêtre « Quoi de neuf » montrée dans l'appli à
+   l'ouverture après une mise à jour — les deux listes doivent rester en
+   phase. Un joueur qui a sauté plusieurs versions d'affilée voit
+   l'historique complet des versions notables manquées, pas seulement la
+   dernière (voir `HomeScreen._maybeShowWhatsNew`).
+7. `gh` est déjà installé et authentifié sur la machine de Ben (compte
    GitHub `Nyvristhrit`, jeton dans le trousseau Windows) — pas besoin de
    relancer `gh auth login`, sauf expiration.

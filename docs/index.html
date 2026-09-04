@@ -25,6 +25,7 @@
     --blue: #3B82F6;
     --violet: #8B5CF6;
     --accent: #6366F1;
+    --pink: #F472B6;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -112,13 +113,25 @@
     margin: 0 0 22px;
   }
   .support-link a {
-    color: var(--ink-dim);
-    font-size: 13.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--pink);
+    font-size: 15px;
+    font-weight: 600;
     text-decoration: none;
-    border-bottom: 1px dashed var(--card-border);
-    padding-bottom: 1px;
+    padding: 9px 20px;
+    border-radius: 999px;
+    border: 1.5px solid rgba(244, 114, 182, 0.55);
+    background: rgba(244, 114, 182, 0.08);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   }
-  .support-link a:hover { color: var(--ink); border-color: var(--ink-dim); }
+  .support-link a:hover {
+    background: rgba(244, 114, 182, 0.18);
+    border-color: var(--pink);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px -10px rgba(244, 114, 182, 0.65);
+  }
   .note {
     text-align: center;
     color: var(--ink-dim);
@@ -362,7 +375,7 @@
         <text x="120" y="98" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="112" fill="url(#stripes)" stroke="url(#stripes)" stroke-width="5" stroke-linejoin="round" paint-order="stroke fill">10K</text>
       </svg>
       <p class="tagline">Compagnon de jeu du 10 000 — 100&nbsp;% hors ligne</p>
-      <span class="version-pill"><span class="dot"></span> Version actuelle : v1.4.0</span>
+      <span class="version-pill"><span class="dot"></span> Version actuelle : v1.5.0</span>
     </header>
 
     <div class="cta">
@@ -417,11 +430,17 @@
       <summary>📋 Nouveautés et historique des versions</summary>
       <div class="entries">
         <div class="version">
+          <h4>v1.5.0 <span class="date">4 septembre 2026</span></h4>
+          <ul>
+            <li>Dernière chance : un joueur délogé peut désormais retenter sa chance et redéloger l'adversaire — la revanche est illimitée, jusqu'à ce qu'un candidat traverse un tour complet sans se faire déloger.</li>
+            <li>Une fenêtre « Quoi de neuf » résume les nouveautés à l'ouverture de l'appli après une mise à jour.</li>
+          </ul>
+        </div>
+        <div class="version">
           <h4>v1.4.0 <span class="date">4 septembre 2026</span></h4>
           <ul>
             <li>Nouvel écran « Stats & records » : parties jouées, temps de jeu cumulé, manches moyennes par score cible, plus gros carton…</li>
             <li>Alias de joueur (stable d'une partie à l'autre) et écran « Alias & profils » : victoires par personne, couleur perso, renommage.</li>
-            <li>Correction des couleurs de dés parfois marron/olive selon le tirage.</li>
           </ul>
         </div>
         <div class="version">
