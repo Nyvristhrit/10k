@@ -113,16 +113,14 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
         // Intensité du « touché » (1 à l'impact, 0 au repos) et secousse
         // horizontale qui oscille en s'amortissant.
         final hit = _hit.value;
-        final shakeX =
-            hit == 0 ? 0.0 : sin((1 - hit) * pi * 6) * 8.0 * hit;
+        final shakeX = hit == 0 ? 0.0 : sin((1 - hit) * pi * 6) * 8.0 * hit;
 
         // Bordure : blanche (active/inactive) qui vire au rouge quand touché.
         final baseBorderColor = widget.isActive
             ? Colors.white.withValues(alpha: 0.55 + 0.35 * t)
             : Colors.white.withValues(alpha: 0.06);
         final borderColor = Color.lerp(baseBorderColor, hitColor, hit)!;
-        final borderWidth =
-            (widget.isActive ? 2.5 : 1.0) + 1.5 * hit;
+        final borderWidth = (widget.isActive ? 2.5 : 1.0) + 1.5 * hit;
 
         return Transform.translate(
           offset: Offset(shakeX, 0),
@@ -148,7 +146,8 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
                   boxShadow: [
                     BoxShadow(
                       color: (widget.isActive ? accent : base).withValues(
-                          alpha: widget.isActive ? 0.35 + 0.30 * t : 0.20),
+                        alpha: widget.isActive ? 0.35 + 0.30 * t : 0.20,
+                      ),
                       blurRadius: widget.isActive ? 26 + 12 * t : 14,
                       spreadRadius: widget.isActive ? 1 : 0,
                       offset: const Offset(0, 8),
@@ -176,24 +175,34 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
             Row(
               children: [
                 Text(
-                    widget.shamed ? Taunts.shameEmoji : emojiFor(player),
-                    style: TextStyle(fontSize: widget.compact ? 26 : 32)),
+                  widget.shamed ? Taunts.shameEmoji : emojiFor(player),
+                  style: TextStyle(fontSize: widget.compact ? 26 : 32),
+                ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    player.displayName,
-                    style: TextStyle(
+                  // `FittedBox` plutôt qu'un `overflow: ellipsis` fixe : un nom
+                  // long (espèce + épithète composées) rétrécit pour tenir en
+                  // entier au lieu d'être coupé au milieu d'un mot.
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      player.displayName,
+                      maxLines: 1,
+                      style: TextStyle(
                         color: fg,
                         fontWeight: FontWeight.w800,
-                        fontSize: widget.compact ? 15 : 19),
-                    overflow: TextOverflow.ellipsis,
+                        fontSize: widget.compact ? 15 : 19,
+                      ),
+                    ),
                   ),
                 ),
                 _Lives(
-                    lives: player.lives,
-                    maxLives: widget.maxLives,
-                    compact: widget.compact,
-                    skin: skin),
+                  lives: player.lives,
+                  maxLives: widget.maxLives,
+                  compact: widget.compact,
+                  skin: skin,
+                ),
               ],
             ),
             Expanded(
@@ -206,11 +215,12 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
                     // compteur grimper à la marque et décroître à la rencontre.
                     duration: const Duration(milliseconds: 1100),
                     style: TextStyle(
-                        color: fg,
-                        fontSize: 96,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -2,
-                        height: 1),
+                      color: fg,
+                      fontSize: 96,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -2,
+                      height: 1,
+                    ),
                   ),
                 ),
               ),
@@ -220,9 +230,10 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
                   ? 'Dernier gain : —'
                   : 'Dernier gain : +${last.amount}',
               style: TextStyle(
-                  color: fg.withValues(alpha: 0.82),
-                  fontSize: widget.compact ? 12 : 13,
-                  fontWeight: FontWeight.w500),
+                color: fg.withValues(alpha: 0.82),
+                fontSize: widget.compact ? 12 : 13,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -255,7 +266,9 @@ class _Lives extends StatelessWidget {
     final size = compact ? 18.0 : 22.0;
     return Container(
       padding: EdgeInsets.symmetric(
-          horizontal: compact ? 5 : 7, vertical: compact ? 3 : 4),
+        horizontal: compact ? 5 : 7,
+        vertical: compact ? 3 : 4,
+      ),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.28),
         borderRadius: BorderRadius.circular(14),
@@ -326,10 +339,16 @@ class _LifeGaugeState extends State<_LifeGauge>
         alignment: Alignment.center,
         children: [
           // Le conteneur (contour) : toujours là, même vide.
-          Icon(skin.lifeIcon,
-              size: s, color: Colors.black.withValues(alpha: 0.35)),
-          Icon(skin.lifeIconOutline,
-              size: s, color: Colors.white.withValues(alpha: 0.85)),
+          Icon(
+            skin.lifeIcon,
+            size: s,
+            color: Colors.black.withValues(alpha: 0.35),
+          ),
+          Icon(
+            skin.lifeIconOutline,
+            size: s,
+            color: Colors.white.withValues(alpha: 0.85),
+          ),
           // L'interieur, qui tombe quand on perd la vie.
           AnimatedBuilder(
             animation: _drop,
@@ -344,10 +363,7 @@ class _LifeGaugeState extends State<_LifeGauge>
                 offset: Offset(0, drop * s * 1.6),
                 child: Transform.rotate(
                   angle: drop * 0.5,
-                  child: Opacity(
-                    opacity: opacity.toDouble(),
-                    child: child,
-                  ),
+                  child: Opacity(opacity: opacity.toDouble(), child: child),
                 ),
               );
             },
