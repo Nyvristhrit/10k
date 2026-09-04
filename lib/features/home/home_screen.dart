@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/theme/tenk_skin.dart';
 import '../../application/providers/app_providers.dart';
+import '../../data/catalogs/whats_new_catalog.dart';
 import '../../domain/enums/game_enums.dart';
 import '../../domain/models/game_state.dart';
 import '../../shared/animations/entrance.dart';
@@ -18,13 +19,66 @@ import '../game_setup/game_setup_screen.dart';
 import '../info/info_screen.dart';
 import '../profiles/profiles_screen.dart';
 import '../stats/stats_screen.dart';
+import 'whats_new_dialog.dart';
 
 /// Écran d'accueil (§20.1).
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Après le premier rendu : ne bloque jamais l'affichage de l'accueil,
+    // et laisse le contexte de navigation bien établi avant d'ouvrir un
+    // dialogue par-dessus.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowWhatsNew());
+  }
+
+  /// Montre le popup « Quoi de neuf » une seule fois par version notable,
+  /// jamais au tout premier lancement (rien à comparer, ce serait juste du
+  /// bruit pour un nouvel arrivant).
+  Future<void> _maybeShowWhatsNew() async {
+    if (!mounted) return;
+    final repo = ref.read(settingsRepositoryProvider);
+    final latest = WhatsNewCatalog.releases.last;
+    final lastSeen = repo.loadLastSeenWhatsNewVersion();
+    if (lastSeen == latest.version) return;
+
+    // Clé absente + aucun autre réglage enregistré = appli jamais ouverte
+    // avant : on se contente de mémoriser la version actuelle, sans rien
+    // montrer.
+    final firstEverLaunch = lastSeen == null && !repo.hasAnySettings();
+
+    final unseen = firstEverLaunch
+        ? const <WhatsNewRelease>[]
+        : lastSeen == null
+            // Clé introduite par cette mise à jour, mais l'appareil a déjà
+            // des réglages : un joueur existant dont on ne connaît pas la
+            // dernière version vue. On montre tout l'historique notable
+            // plutôt que la seule dernière version — sinon un joueur qui a
+            // sauté plusieurs mises à jour d'un coup (l'appli est restée
+            // fermée un moment) rate le contenu des versions intermédiaires
+            // (Ben, 4 septembre 2026 : a raté le plateau de dés virtuel et
+            // l'ajustement des épithètes, seulement montré la dernière).
+            ? WhatsNewCatalog.releases
+            : WhatsNewCatalog.since(lastSeen);
+
+    repo.saveLastSeenWhatsNewVersion(latest.version);
+    if (unseen.isEmpty || !mounted) return;
+
+    await showDialog<void>(
+      context: context,
+      builder: (_) => WhatsNewDialog(releases: unseen),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final async = ref.watch(gameControllerProvider);
     final dark = Theme.of(context).brightness == Brightness.dark;
     final skin = TenkSkin.of(context);

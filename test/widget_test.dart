@@ -8,13 +8,20 @@ import 'package:tenk/data/repositories/in_memory_game_repository.dart';
 import 'package:tenk/data/repositories/settings_repository.dart';
 
 void main() {
+  // Un dossier de réglages dédié (et non `Directory.systemTemp` partagé) :
+  // sinon un réglage écrit par un autre fichier de test qui partage aussi ce
+  // dossier (ex. `lastSeenWhatsNewVersion`) peut faire apparaître un
+  // dialogue inattendu ici et bloquer les taps suivants.
+  late Directory dir;
+  setUp(() => dir = Directory.systemTemp.createTempSync('tenk_widget_test_'));
+  tearDown(() => dir.deleteSync(recursive: true));
+
   testWidgets('parcours accueil → préparation → démarrage', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           gameRepositoryProvider.overrideWithValue(InMemoryGameRepository()),
-          settingsRepositoryProvider
-              .overrideWithValue(SettingsRepository(Directory.systemTemp)),
+          settingsRepositoryProvider.overrideWithValue(SettingsRepository(dir)),
         ],
         child: const TenkApp(),
       ),

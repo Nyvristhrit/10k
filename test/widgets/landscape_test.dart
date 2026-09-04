@@ -13,6 +13,14 @@ import 'package:tenk/data/repositories/settings_repository.dart';
 /// large et courte, qu'aucun écran ne déborde (`RenderFlex overflowed`) — le
 /// bug qui avait fait verrouiller le portrait avant l'ouverture de la rotation.
 void main() {
+  // Un dossier de réglages dédié par test (et non `Directory.systemTemp`
+  // partagé) : sinon un réglage écrit par un autre fichier de test qui
+  // partage aussi ce dossier partagé (ex. `lastSeenWhatsNewVersion`) peut
+  // faire apparaître un dialogue inattendu ici et bloquer les taps suivants.
+  late Directory dir;
+  setUp(() => dir = Directory.systemTemp.createTempSync('tenk_landscape_'));
+  tearDown(() => dir.deleteSync(recursive: true));
+
   testWidgets(
       'accueil et plateau (beaucoup de joueurs) ne débordent pas en paysage',
       (tester) async {
@@ -26,7 +34,7 @@ void main() {
         overrides: [
           gameRepositoryProvider.overrideWithValue(InMemoryGameRepository()),
           settingsRepositoryProvider
-              .overrideWithValue(SettingsRepository(Directory.systemTemp)),
+              .overrideWithValue(SettingsRepository(dir)),
         ],
         child: const TenkApp(),
       ),
@@ -66,7 +74,7 @@ void main() {
         overrides: [
           gameRepositoryProvider.overrideWithValue(InMemoryGameRepository()),
           settingsRepositoryProvider
-              .overrideWithValue(SettingsRepository(Directory.systemTemp)),
+              .overrideWithValue(SettingsRepository(dir)),
         ],
         child: const TenkApp(),
       ),

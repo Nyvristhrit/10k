@@ -109,4 +109,24 @@ class SettingsRepository {
   /// Mémorise la liste des profils d'alias.
   void saveAliasProfiles(List<AliasProfile> profiles) =>
       _write('aliasProfiles', profiles.map((p) => p.toJson()).toList());
+
+  /// La dernière version notable dont le joueur a déjà vu les nouveautés
+  /// (popup « Quoi de neuf » à l'ouverture de l'appli). `null` si jamais
+  /// enregistré (première ouverture, ou mise à jour depuis une version
+  /// antérieure à l'ajout de cette fonctionnalité).
+  String? loadLastSeenWhatsNewVersion() {
+    final raw = _read()['lastSeenWhatsNewVersion'];
+    return raw is String ? raw : null;
+  }
+
+  /// Mémorise la version dont les nouveautés viennent d'être montrées (ou
+  /// qu'il n'y a pas lieu de montrer, cf. `WhatsNewCatalog`).
+  void saveLastSeenWhatsNewVersion(String version) =>
+      _write('lastSeenWhatsNewVersion', version);
+
+  /// Y a-t-il déjà des réglages enregistrés sur cet appareil ? Sert à
+  /// distinguer une toute première installation (rien à montrer dans le
+  /// popup « Quoi de neuf », il n'y a pas d'« avant ») d'une mise à jour
+  /// depuis une version où cette clé n'existait pas encore.
+  bool hasAnySettings() => _read().isNotEmpty;
 }
