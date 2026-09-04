@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme/tenk_skin.dart';
@@ -25,6 +26,22 @@ class InfoScreen extends ConsumerStatefulWidget {
 class _InfoScreenState extends ConsumerState<InfoScreen> {
   int _tab = 0;
   int _taps = 0;
+
+  /// Version affichée dans « À propos », lue depuis `pubspec.yaml` (jamais à
+  /// remettre à jour à la main : elle suit le numéro de version réel de
+  /// l'APK installé). `null` tant qu'elle n'est pas encore chargée.
+  PackageInfo? _packageInfo;
+
+  @override
+  void initState() {
+    super.initState();
+    PackageInfo.fromPlatform().then((info) {
+      if (mounted) setState(() => _packageInfo = info);
+    }).catchError((_) {
+      // Si la plateforme ne répond pas, on garde simplement la ligne vide
+      // plutôt que de planter l'écran pour un simple numéro de version.
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -264,7 +281,10 @@ class _InfoScreenState extends ConsumerState<InfoScreen> {
         const _SupportCard(),
         const SizedBox(height: 12),
         Center(
-          child: Text('Version 1.0',
+          child: Text(
+              _packageInfo == null
+                  ? ' '
+                  : 'Version ${_packageInfo!.version} (${_packageInfo!.buildNumber})',
               style: TextStyle(
                   color: Theme.of(context)
                       .colorScheme
