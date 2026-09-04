@@ -8,6 +8,7 @@ import '../../domain/models/game_state.dart';
 import '../../domain/repositories/game_repository.dart';
 import '../../domain/services/game_engine.dart';
 import '../controllers/custom_adjectives_controller.dart';
+import '../controllers/dice_tray_controller.dart';
 import '../controllers/game_controller.dart';
 import '../controllers/keep_screen_on_controller.dart';
 import '../controllers/theme_controller.dart';
@@ -45,6 +46,10 @@ final customTrashAdjectivesProvider =
 final keepScreenOnEnabledProvider =
     NotifierProvider<KeepScreenOnController, bool>(
         KeepScreenOnController.new);
+
+/// Réglage « dés dans l'appli » (icône sur le plateau, mémorisé, défaut oui).
+final diceTrayEnabledProvider =
+    NotifierProvider<DiceTrayController, bool>(DiceTrayController.new);
 
 /// Rang de la teinte d'accent de l'UI, tiré au hasard **à chaque ouverture** de
 /// l'appli (le provider n'est créé qu'une fois par lancement). Petit détail

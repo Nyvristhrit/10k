@@ -79,4 +79,16 @@ class SettingsRepository {
   /// Mémorise le réglage d'écran toujours allumé.
   void saveKeepScreenOnEnabled(bool enabled) =>
       _write('keepScreenOnEnabled', enabled);
+
+  /// Le plateau de dés virtuel est-il proposé (icône sur le plateau) ? Réglage
+  /// général, indépendant d'une partie (défaut : oui) — à désactiver si on
+  /// joue avec de vrais dés, pour libérer une icône.
+  bool loadDiceTrayEnabled() {
+    final raw = _read()['diceTrayEnabled'];
+    return raw is bool ? raw : true;
+  }
+
+  /// Mémorise le réglage du plateau de dés virtuel.
+  void saveDiceTrayEnabled(bool enabled) =>
+      _write('diceTrayEnabled', enabled);
 }

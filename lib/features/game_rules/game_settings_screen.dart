@@ -176,6 +176,20 @@ class GameSettingsScreen extends ConsumerWidget {
             ),
           ],
         ),
+        _Section(
+          title: 'Dés',
+          children: [
+            _SwitchTile(
+              label: 'Dés dans l\'appli',
+              subtitle:
+                  'Icône 🎲 sur le plateau pour lancer les dés directement '
+                  'dans l\'appli. À désactiver si tu joues avec de vrais dés.',
+              value: ref.watch(diceTrayEnabledProvider),
+              onChanged: (v) =>
+                  ref.read(diceTrayEnabledProvider.notifier).set(v),
+            ),
+          ],
+        ),
         if (ref.watch(trashModeProvider)) const TrashAdjectivesSection(),
       ],
     );

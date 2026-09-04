@@ -95,13 +95,14 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
       appBar: AppBar(
         title: Text(_title(game)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.casino_outlined),
-            tooltip: 'Lancer des dés',
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const DiceTrayScreen()),
+          if (ref.watch(diceTrayEnabledProvider))
+            IconButton(
+              icon: const Icon(Icons.casino_outlined),
+              tooltip: 'Lancer des dés',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const DiceTrayScreen()),
+              ),
             ),
-          ),
           IconButton(
             icon: const Icon(Icons.history),
             tooltip: 'Historique de la partie',

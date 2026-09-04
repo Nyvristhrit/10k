@@ -15,6 +15,16 @@ void main() {
     expect(repo.loadThemeMode(), ThemeMode.dark);
     expect(repo.loadTrashMode(), isFalse);
     expect(repo.loadCustomTrashAdjectives(), isEmpty);
+    expect(repo.loadKeepScreenOnEnabled(), isTrue);
+    expect(repo.loadDiceTrayEnabled(), isTrue);
+  });
+
+  test('mémorise le réglage des dés dans l\'appli', () {
+    final repo = SettingsRepository(dir);
+    repo.saveDiceTrayEnabled(false);
+
+    final reloaded = SettingsRepository(dir);
+    expect(reloaded.loadDiceTrayEnabled(), isFalse);
   });
 
   test('mémorise les épithètes trash perso', () {
