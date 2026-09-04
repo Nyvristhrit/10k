@@ -760,8 +760,13 @@ class GameEngine {
   String _scoutName(AnimalAvatar avatar,
       {required bool trash, List<String> custom = const []}) {
     final species = _speciesName(avatar);
-    final pool =
-        trash ? [...AdjectiveCatalog.trash, ...custom] : AdjectiveCatalog.safe;
+    // Les épithètes perso (ajoutées à la table) comptent double dans le tirage :
+    // face aux ~70 épithètes du catalogue de base, elles ne sortiraient presque
+    // jamais sinon. Les dupliquer dans le pool est la façon la plus simple de
+    // leur donner un poids 2× sous un tirage uniforme.
+    final pool = trash
+        ? [...AdjectiveCatalog.trash, ...custom, ...custom]
+        : AdjectiveCatalog.safe;
     if (pool.isEmpty) return species;
     return '$species ${pool[_random.nextInt(pool.length)]}';
   }

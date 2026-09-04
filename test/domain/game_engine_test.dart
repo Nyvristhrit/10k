@@ -13,6 +13,24 @@ import 'package:tenk/domain/services/encounter_summary.dart';
 import 'package:tenk/domain/services/game_engine.dart';
 import 'package:tenk/domain/services/game_transition.dart';
 
+/// Faux générateur aléatoire qui renvoie toujours le même index (modulo la
+/// borne demandée, pour ne jamais planter un tirage qui attend un index plus
+/// petit — avatar, couleur…). Utile pour viser une position précise dans un
+/// pool sans dépendre du hasard.
+class _FixedRandom implements Random {
+  const _FixedRandom(this._value);
+  final int _value;
+
+  @override
+  int nextInt(int max) => _value % max;
+
+  @override
+  double nextDouble() => 0;
+
+  @override
+  bool nextBool() => false;
+}
+
 // ── Utilitaires de test ───────────────────────────────────────────────────────
 
 GameEngine makeEngine() {
@@ -137,6 +155,28 @@ void main() {
       }
       expect(found, true,
           reason: 'L\'épithète perso devrait finir par sortir du tirage');
+    });
+
+    test('les épithètes perso comptent double dans le tirage', () {
+      // Le poids double est obtenu en dupliquant l'épithète perso dans le
+      // pool : deux positions distinctes doivent donc y mener toutes les
+      // deux, ce qui est exactement le mécanisme qui double sa probabilité
+      // face au catalogue de base.
+      const custom = ['Aubergine'];
+      final firstCopy = AdjectiveCatalog.trash.length;
+      final secondCopy = AdjectiveCatalog.trash.length + custom.length;
+
+      for (final index in [firstCopy, secondCopy]) {
+        final engine = GameEngine(
+          idGenerator: () => 'id',
+          clock: () => DateTime(2026, 1, 1),
+          random: _FixedRandom(index),
+        );
+        final s = ok(engine.apply(engine.createGame(),
+            const AddPlayer(trashNames: true, customTrashAdjectives: custom)));
+        expect(s.players.single.displayName.endsWith('Aubergine'), true,
+            reason: 'index $index du pool devrait pointer sur l\'épithète perso');
+      }
     });
 
     test('emojis (avatars) et couleurs uniques', () {
