@@ -66,7 +66,6 @@ class AdjectiveCatalog {
     'Bavard·e',
     'Curieux·se',
     'Gourmand·e',
-    'Chatouilleux·se',
     'Craintif·ive',
     'Fougueux·se',
     'Songeur·euse',
@@ -74,7 +73,6 @@ class AdjectiveCatalog {
     'Astucieux·se',
     'Bricoleur·euse',
     'Aventurier·ère',
-    'Explorateur·rice',
     'Diplomate',
     'Stratège',
     'Philosophe',
@@ -91,7 +89,6 @@ class AdjectiveCatalog {
     'Optimiste',
     'Ronchon·ne',
     'Chanceux·se',
-    'Superstitieux·se',
     'Sentimental·e',
     'Nostalgique',
   ];
