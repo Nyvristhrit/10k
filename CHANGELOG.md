@@ -10,6 +10,25 @@
 > techniques justifiés), `docs/BACKLOG.md` (reste à faire) et
 > `docs/SPECIFICATION.md` (règles du jeu détaillées).
 
+## [v1.3.0] — 2026-09-04
+
+### Ajouté
+- **Historique de la partie** : une icône 🕐 sur le plateau ouvre la liste de
+  tous les coups joués, groupés par manche (la plus récente en haut, la
+  manche 1 en bas) et classés du plus récent au plus ancien dans chaque
+  manche — comme un fil d'actualité. Toucher un coup passé propose d'y
+  revenir exactement : tout ce qui a suivi est annulé, un coup à la fois, en
+  réutilisant l'annulation atomique déjà testée du moteur
+  (`GameController.revertToAction`, `lib/features/game_board/game_history_screen.dart`).
+- **Plateau de dés virtuel** : une icône 🎲 sur le plateau ouvre un tapis avec
+  6 dés animés (relief en dégradé, tremblement et défilement des faces au
+  lancer, dessinés à la main en `CustomPainter` — aucun package graphique).
+  On lance, on touche les dés à garder de côté, puis on relance le reste —
+  pour jouer même sans dés physiques sous la main
+  (`lib/features/dice_tray/dice_tray_screen.dart`). L'appli ne calcule rien à
+  la place du joueur : le score se saisit toujours normalement sur le
+  plateau.
+
 ## [v1.2.1] — 2026-08-19
 
 ### Corrigé
