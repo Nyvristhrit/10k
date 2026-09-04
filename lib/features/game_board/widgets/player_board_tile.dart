@@ -116,11 +116,14 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
         final shakeX = hit == 0 ? 0.0 : sin((1 - hit) * pi * 6) * 8.0 * hit;
 
         // Bordure : blanche (active/inactive) qui vire au rouge quand touché.
+        // Le joueur actif se démarque plus franchement (signalé passer
+        // inaperçu) : bordure plus épaisse et jamais trop pâle, même au
+        // creux du pouls.
         final baseBorderColor = widget.isActive
-            ? Colors.white.withValues(alpha: 0.55 + 0.35 * t)
+            ? Colors.white.withValues(alpha: 0.75 + 0.25 * t)
             : Colors.white.withValues(alpha: 0.06);
         final borderColor = Color.lerp(baseBorderColor, hitColor, hit)!;
-        final borderWidth = (widget.isActive ? 2.5 : 1.0) + 1.5 * hit;
+        final borderWidth = (widget.isActive ? 3.5 : 1.0) + 1.5 * hit;
 
         return Transform.translate(
           offset: Offset(shakeX, 0),
@@ -146,10 +149,10 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
                   boxShadow: [
                     BoxShadow(
                       color: (widget.isActive ? accent : base).withValues(
-                        alpha: widget.isActive ? 0.35 + 0.30 * t : 0.20,
+                        alpha: widget.isActive ? 0.55 + 0.35 * t : 0.20,
                       ),
-                      blurRadius: widget.isActive ? 26 + 12 * t : 14,
-                      spreadRadius: widget.isActive ? 1 : 0,
+                      blurRadius: widget.isActive ? 34 + 18 * t : 14,
+                      spreadRadius: widget.isActive ? 3 : 0,
                       offset: const Offset(0, 8),
                     ),
                     // Halo rouge de dégât, superposé et fondu au repos.
