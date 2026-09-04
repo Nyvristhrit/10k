@@ -72,4 +72,33 @@ void main() {
     final reverted = await notifier.revertToAction(firstActionId);
     expect(reverted, isFalse);
   });
+
+  test('newGame conserve une partie terminée mais efface une abandonnée',
+      () async {
+    final repo = InMemoryGameRepository();
+    final c = ProviderContainer(
+        overrides: [gameRepositoryProvider.overrideWithValue(repo)]);
+    addTearDown(c.dispose);
+    final notifier = c.read(gameControllerProvider.notifier);
+
+    // Partie abandonnée en cours de préparation : effacée à la suivante.
+    await notifier.newGame();
+    final abandonedId = c.read(gameControllerProvider).value!.id;
+    await notifier.newGame();
+    expect(await repo.loadGame(abandonedId), isNull);
+
+    // Partie menée jusqu'au bout : conservée (alimente les statistiques).
+    await notifier.dispatch(const AddPlayer(displayName: 'Alpha'));
+    await notifier.dispatch(const AddPlayer(displayName: 'Beta'));
+    await notifier.dispatch(const StartGame());
+    final alpha = c.read(gameControllerProvider).value!.players[0].id;
+    final beta = c.read(gameControllerProvider).value!.players[1].id;
+    await notifier.dispatch(RecordScore(playerId: alpha, amount: 10000));
+    await notifier.dispatch(PassTurn(playerId: beta));
+    final finishedId = c.read(gameControllerProvider).value!.id;
+    expect(c.read(gameControllerProvider).value!.status.name, 'finished');
+
+    await notifier.newGame();
+    expect(await repo.loadGame(finishedId), isNotNull);
+  });
 }
