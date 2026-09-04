@@ -1129,20 +1129,27 @@ Renard rencontre Pingouin :
 - Pingouin redescend à son palier précédent ;
 - Renard devient le nouveau candidat à la victoire.
 
-La phase continue pour les joueurs qui n'ont pas encore utilisé leur dernière chance.
-
-Le premier candidat délogé ne reçoit pas un nouveau tour.
+**Chaque délogement relance une manche de revanche complète** (règle amendée
+le 4 septembre 2026, voir DECISIONS A-012) : tous les autres joueurs actifs —
+y compris Pingouin, tout juste délogé, et tout joueur qui avait déjà joué sa
+dernière chance contre lui — redeviennent en attente face à Renard. Un
+joueur délogé peut donc revenir se venger, autant de fois que la table le
+souhaite, tant qu'il retombe à 10 000 à son tour.
 
 ## 16.5 Fin de la phase
 
-Lorsque tous les joueurs autorisés ont joué leur dernière chance :
+La phase se termine dès qu'un candidat traverse une manche complète — tous
+les joueurs en attente ont joué — **sans être délogé** :
 
-- le joueur encore présent à 10 000 gagne ;
+- ce candidat gagne ;
 - la partie passe à `FINISHED` ;
 - les tuiles deviennent non interactives ;
 - l'écran de résultat s'ouvre.
 
-Grâce à la rencontre à 10 000, un seul joueur doit rester à 10 000.
+Dans une partie à 2 joueurs, un délogement laisse toujours l'autre joueur en
+attente pour une chance de revanche — la partie ne se termine donc jamais
+sur le coup d'un délogement, seulement quand ce dernier joueur en attente
+échoue à son tour à reprendre la place.
 
 ---
 

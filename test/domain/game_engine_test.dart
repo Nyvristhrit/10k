@@ -670,7 +670,9 @@ void main() {
       expect(s.winnerPlayerId, a);
     });
 
-    test('rencontre à 10 000 : le candidat est délogé (Annexe C.5)', () {
+    test(
+        'rencontre à 10 000 : le candidat est délogé et la manche recommence '
+        'pour tout le monde (Annexe C.5, amendée)', () {
       final r = start(3, mode: TurnMode.free);
       final e = r.engine;
       final ping = r.ids[0];
@@ -679,17 +681,83 @@ void main() {
 
       var s = ok(e.apply(r.state, RecordScore(playerId: ping, amount: 10000)));
       expect(s.finalChanceState!.currentCandidatePlayerId, ping);
+      expect(s.finalChanceState!.pendingPlayerIds, [renard, panda]);
 
       // Renard utilise sa dernière chance et atteint aussi 10 000.
       s = ok(e.apply(s, RecordScore(playerId: renard, amount: 10000)));
       expect(scoreOf(s, renard), 10000);
       expect(scoreOf(s, ping) < 10000, true); // délogé
       expect(s.finalChanceState!.currentCandidatePlayerId, renard);
+      // Chaque délogement relance une manche complète : ping (délogé) et
+      // panda (pas encore rejoué contre renard) sont tous deux en attente.
+      expect(s.finalChanceState!.pendingPlayerIds, [panda, ping]);
 
-      // Panda joue sa dernière chance (passe) -> fin de partie, Renard gagne.
+      // Panda ne déloge pas renard -> il reste un seul joueur en attente
+      // (ping), la partie ne se termine PAS encore.
       s = ok(e.apply(s, PassTurn(playerId: panda)));
+      expect(s.status, GameStatus.finalChance);
+      expect(s.finalChanceState!.currentCandidatePlayerId, renard);
+      expect(s.finalChanceState!.pendingPlayerIds, [ping]);
+
+      // Ping ne déloge pas non plus -> tout le monde a fini sa manche contre
+      // renard sans le déloger : la partie se termine, renard gagne.
+      s = ok(e.apply(s, PassTurn(playerId: ping)));
       expect(s.status, GameStatus.finished);
       expect(s.winnerPlayerId, renard);
+    });
+
+    test(
+        'un candidat délogé reçoit une nouvelle dernière chance pour se '
+        'venger, autant de fois que nécessaire', () {
+      final r = start(3, mode: TurnMode.free);
+      final e = r.engine;
+      final ping = r.ids[0];
+      final renard = r.ids[1];
+      final panda = r.ids[2];
+
+      var s = ok(e.apply(r.state, RecordScore(playerId: ping, amount: 10000)));
+      // Renard déloge ping.
+      s = ok(e.apply(s, RecordScore(playerId: renard, amount: 10000)));
+      expect(s.finalChanceState!.currentCandidatePlayerId, renard);
+      // Panda ne déloge pas renard.
+      s = ok(e.apply(s, PassTurn(playerId: panda)));
+      expect(s.finalChanceState!.pendingPlayerIds, [ping]);
+
+      // C'est au tour de ping de se venger : il rejoue et redéloge renard.
+      s = ok(e.apply(s, RecordScore(playerId: ping, amount: 10000)));
+      expect(scoreOf(s, ping), 10000);
+      expect(scoreOf(s, renard) < 10000, true); // redélogé à son tour
+      expect(s.finalChanceState!.currentCandidatePlayerId, ping);
+      expect(s.finalChanceState!.pendingPlayerIds, [renard, panda]);
+      expect(s.status, GameStatus.finalChance); // toujours pas fini
+
+      // Cette fois, ni renard ni panda ne délogent ping : ping gagne.
+      s = ok(e.apply(s, PassTurn(playerId: renard)));
+      expect(s.status, GameStatus.finalChance);
+      s = ok(e.apply(s, PassTurn(playerId: panda)));
+      expect(s.status, GameStatus.finished);
+      expect(s.winnerPlayerId, ping);
+    });
+
+    test('délogement à 2 joueurs : le délogé garde sa chance de revanche',
+        () {
+      final r = start(2, mode: TurnMode.free);
+      final e = r.engine;
+      final a = r.ids[0];
+      final b = r.ids[1];
+
+      var s = ok(e.apply(r.state, RecordScore(playerId: a, amount: 10000)));
+      s = ok(e.apply(s, RecordScore(playerId: b, amount: 10000)));
+      // B déloge A, mais A reste en lice pour une revanche (seul joueur
+      // restant) : la partie ne se termine pas tant que A n'a pas rejoué.
+      expect(s.status, GameStatus.finalChance);
+      expect(s.finalChanceState!.currentCandidatePlayerId, b);
+      expect(s.finalChanceState!.pendingPlayerIds, [a]);
+
+      // A ne se venge pas -> B gagne.
+      s = ok(e.apply(s, PassTurn(playerId: a)));
+      expect(s.status, GameStatus.finished);
+      expect(s.winnerPlayerId, b);
     });
   });
 

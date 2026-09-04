@@ -603,12 +603,26 @@ class GameEngine {
       _Ctx ctx, String markerId, bool wasFinalChance, String actionId) {
     if (wasFinalChance) {
       // Le marqueur déloge le candidat (déjà annulé via la rencontre) et devient
-      // le nouveau candidat.
+      // le nouveau candidat. Chaque délogement relance une manche de revanche
+      // complète : tous les autres joueurs actifs (y compris l'ancien
+      // candidat et ceux qui avaient déjà joué leur dernière chance contre le
+      // précédent candidat) redeviennent en attente. La phase ne se termine
+      // que quand un candidat traverse un tour complet sans être délogé (Ben,
+      // règle dictée le 2026-09-04 — amende §16.4/16.5 de SPECIFICATION.md).
       final fc = ctx.finalChance!;
+      final others = _orderStartingAfter(ctx, markerId);
       ctx.setFinalChance(
-        fc.copyWith(currentCandidatePlayerId: markerId),
+        fc.copyWith(
+          currentCandidatePlayerId: markerId,
+          pendingPlayerIds: others,
+          completedPlayerIds: const [],
+          currentPlayerId: others.isEmpty ? null : others.first,
+        ),
         GameEffectType.winnerCandidateChanged,
       );
+      // `_advanceFinalChance` (appelé juste après par `_advanceAfterTurn`)
+      // termine la partie de lui-même si `others` est vide (partie à 2
+      // joueurs : personne d'autre à défier).
       return false;
     }
 

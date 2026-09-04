@@ -190,6 +190,31 @@
   et mélangée à un fond fixe (mat, carte, dégradé…) doit suivre la même
   règle — vérifier que le fond de mélange est neutre, pas juste « sombre ».
 
+### A-012 · Dernière chance : la revanche est illimitée (amende F-002/§16.4)
+- **Contexte (2026-09-04) :** la V1 (spec §16.4, invariant testé Annexe C.5)
+  posait qu'un candidat délogé pendant la dernière chance « ne reçoit pas de
+  nouveau tour » — un seul passage par joueur, dans l'ordre. Ben a précisé la
+  règle réelle qu'il joue à table : à 3 joueurs ou plus, si le joueur A est
+  délogé par B, puis que B n'est pas délogé par C, **A doit pouvoir retenter
+  sa chance** contre B — et ainsi de suite, sans limite, tant qu'un candidat
+  ne traverse pas un tour complet sans être délogé.
+- **Choix :** chaque délogement (`_handleReachedTarget`, cas `wasFinalChance`)
+  réinitialise `pendingPlayerIds` à **tous** les autres joueurs actifs (via
+  `_orderStartingAfter`), pas seulement à ceux qui n'avaient pas encore joué.
+  Un joueur délogé, ou déjà passé sans déloger l'ancien candidat, redevient
+  donc éligible face au nouveau. La phase ne se termine que lorsqu'un
+  candidat encaisse un tour complet de tentatives sans être délogé.
+- **Raison :** fidèle à la règle de table de Ben — la « dernière chance » est
+  une vraie mort subite avec droit de revanche, pas un simple tour de
+  rattrapage à guichet unique.
+- **Effet de bord assumé :** une manche de dernière chance peut en théorie
+  boucler longtemps si les scores restants permettent des allers-retours à
+  10 000 — c'est le comportement voulu (« autant de temps qu'on le veut »),
+  pas un bug.
+- **Testé :** `game_engine_test.dart`, groupe « Dernière chance » (délogement
+  simple qui relance une manche, délogements en chaîne avec revanche, cas à
+  2 joueurs).
+
 ### A-002 · Undo par valeurs stockées
 - **Choix :** chaque `GameEffect` stocke `previousValue`/`nextValue`. L'annulation ré-applique
   les `previousValue` plutôt que de recalculer.
