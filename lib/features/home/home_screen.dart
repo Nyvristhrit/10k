@@ -16,6 +16,8 @@ import '../game_board/game_board_screen.dart';
 import '../game_result/game_result_screen.dart';
 import '../game_setup/game_setup_screen.dart';
 import '../info/info_screen.dart';
+import '../profiles/profiles_screen.dart';
+import '../stats/stats_screen.dart';
 
 /// Écran d'accueil (§20.1).
 class HomeScreen extends ConsumerWidget {
@@ -78,22 +80,38 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            // Petit « ? » dans le coin : aide, règles et à propos.
+            // Alias & profils, puis le petit « ? » : aide, règles et à propos.
             Positioned(
               top: 0,
               right: 4,
               child: SafeArea(
-                child: IconButton(
-                  icon: const Icon(Icons.help_outline),
-                  iconSize: 30,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.7),
-                  tooltip: 'Aide & règles du jeu',
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const InfoScreen()),
-                  ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.people_alt_outlined),
+                      iconSize: 27,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.7),
+                      tooltip: 'Alias & profils',
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ProfilesScreen()),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.help_outline),
+                      iconSize: 30,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.7),
+                      tooltip: 'Aide & règles du jeu',
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const InfoScreen()),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -159,6 +177,16 @@ class HomeScreen extends ConsumerWidget {
             ),
           );
 
+    final statsButton = Entrance(
+      delay: const Duration(milliseconds: 640),
+      child: TextButton.icon(
+        onPressed: () => Navigator.of(context)
+            .push(MaterialPageRoute(builder: (_) => const StatsScreen())),
+        icon: const Icon(Icons.emoji_events_outlined, size: 18),
+        label: const Text('Stats & records'),
+      ),
+    );
+
     if (landscape) {
       // Écran large et court : les deux blocs se partagent la largeur au lieu
       // de s'empiler, ce qui évite tout risque de débordement vertical.
@@ -183,6 +211,8 @@ class HomeScreen extends ConsumerWidget {
                   const SizedBox(height: 14),
                   resumeButton,
                 ],
+                const SizedBox(height: 8),
+                statsButton,
               ],
             ),
           ),
@@ -204,6 +234,8 @@ class HomeScreen extends ConsumerWidget {
           const SizedBox(height: 14),
           resumeButton,
         ],
+        const SizedBox(height: 8),
+        statsButton,
         const Spacer(flex: 2),
       ],
     );

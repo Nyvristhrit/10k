@@ -73,6 +73,7 @@ enum GainCancelReason {
 enum GameActionType {
   playerAdded,
   playerRenamed,
+  playerAliasSet,
   playerRemovedBeforeStart,
   gameStarted,
   scoreRecorded,

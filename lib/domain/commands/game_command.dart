@@ -44,6 +44,14 @@ class RenamePlayer extends GameCommand {
   final String newName;
 }
 
+/// Fixe (ou retire) l'alias de table d'un joueur avant le lancement (§ évolution
+/// « alias joueur pour des stats fiables »). `alias` à `null` (ou vide) le retire.
+class SetPlayerAlias extends GameCommand {
+  const SetPlayerAlias({required this.playerId, this.alias});
+  final String playerId;
+  final String? alias;
+}
+
 /// Supprime définitivement un joueur avant le lancement.
 class RemovePlayerBeforeStart extends GameCommand {
   const RemovePlayerBeforeStart({required this.playerId});

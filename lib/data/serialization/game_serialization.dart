@@ -110,6 +110,7 @@ class GameSerialization {
         'hasEnteredGame': p.hasEnteredGame,
         'hasLeftGame': p.hasLeftGame,
         'gains': p.gains.map(_gainToJson).toList(),
+        'alias': p.alias,
       };
 
   static Player _playerFromJson(Map<String, dynamic> j) => Player(
@@ -125,6 +126,9 @@ class GameSerialization {
         gains: (j['gains'] as List)
             .map((e) => _gainFromJson(e as Map<String, dynamic>))
             .toList(),
+        // Absent des parties enregistrées avant cette évolution : `null` par
+        // défaut, comme un joueur sans alias.
+        alias: j['alias'] as String?,
       );
 
   static Map<String, dynamic> _gainToJson(Gain g) => {

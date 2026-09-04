@@ -4,9 +4,11 @@ import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/settings_repository.dart';
+import '../../domain/models/alias_profile.dart';
 import '../../domain/models/game_state.dart';
 import '../../domain/repositories/game_repository.dart';
 import '../../domain/services/game_engine.dart';
+import '../controllers/alias_profiles_controller.dart';
 import '../controllers/custom_adjectives_controller.dart';
 import '../controllers/dice_tray_controller.dart';
 import '../controllers/game_controller.dart';
@@ -51,6 +53,13 @@ final keepScreenOnEnabledProvider =
 final diceTrayEnabledProvider =
     NotifierProvider<DiceTrayController, bool>(DiceTrayController.new);
 
+/// Tous les profils d'alias créés sur l'appareil (§ évolution « alias
+/// joueur »), proposés dans la modalité de sélection plutôt que retapés, et
+/// affichés dans l'écran « Alias & profils ».
+final aliasProfilesProvider =
+    NotifierProvider<AliasProfilesController, List<AliasProfile>>(
+        AliasProfilesController.new);
+
 /// Rang de la teinte d'accent de l'UI, tiré au hasard **à chaque ouverture** de
 /// l'appli (le provider n'est créé qu'une fois par lancement). Petit détail
 /// ludique et multicolore ; volontairement pas mémorisé pour changer à chaque
@@ -64,6 +73,13 @@ final gameEngineProvider = Provider<GameEngine>((ref) => GameEngine());
 /// Partie active courante (null s'il n'y en a pas).
 final gameControllerProvider =
     AsyncNotifierProvider<GameController, GameState?>(GameController.new);
+
+/// Toutes les parties terminées de l'appareil (§ écran de statistiques).
+/// `autoDispose` : relu à chaque ouverture de l'écran plutôt que mis en
+/// cache, pour refléter la toute dernière partie sans logique de rafraîchissement.
+final finishedGamesProvider = FutureProvider.autoDispose<List<GameState>>(
+  (ref) => ref.read(gameRepositoryProvider).loadFinishedGames(),
+);
 
 /// Scores « gelés » le temps d'afficher l'alerte de rencontre.
 ///

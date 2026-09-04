@@ -220,6 +220,32 @@ void main() {
       expect(failCode(r.engine.apply(r.state, const AddPlayer())),
           GameRuleViolationCode.gameAlreadyStarted);
     });
+
+    test('alias : ajoute le @ si absent, retire si vide', () {
+      final e = makeEngine();
+      var s = e.createGame();
+      s = ok(e.apply(s, const AddPlayer()));
+      final id = s.players.first.id;
+
+      s = ok(e.apply(s, SetPlayerAlias(playerId: id, alias: 'Ben')));
+      expect(playerOf(s, id).alias, '@Ben');
+
+      // Déjà préfixé : pas de doublon de @.
+      s = ok(e.apply(s, SetPlayerAlias(playerId: id, alias: '@Ben2')));
+      expect(playerOf(s, id).alias, '@Ben2');
+
+      s = ok(e.apply(s, SetPlayerAlias(playerId: id, alias: '')));
+      expect(playerOf(s, id).alias, isNull);
+    });
+
+    test('alias : verrouillé après démarrage', () {
+      final r = start(2);
+      final id = r.ids.first;
+      expect(
+          failCode(
+              r.engine.apply(r.state, SetPlayerAlias(playerId: id, alias: 'X'))),
+          GameRuleViolationCode.gameAlreadyStarted);
+    });
   });
 
   // ── §31.2 Sortie ────────────────────────────────────────────────────────────

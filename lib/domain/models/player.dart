@@ -20,6 +20,7 @@ class Player extends Equatable {
     this.hasEnteredGame = false,
     this.hasLeftGame = false,
     this.gains = const [],
+    this.alias,
   });
 
   final String id;
@@ -28,6 +29,14 @@ class Player extends Equatable {
 
   /// Nom affiché (nom d'animal par défaut, ou nom personnalisé).
   final String displayName;
+
+  /// Alias de table facultatif (ex. « @Ben »), toujours préfixé de `@` —
+  /// c'est ce qui le distingue visuellement du nom d'animal tiré au hasard.
+  /// Contrairement à [displayName] (qui change à chaque partie), l'alias est
+  /// stable d'une partie à l'autre : c'est lui que les statistiques
+  /// utilisent pour attribuer les victoires à la bonne personne plutôt qu'au
+  /// totem tiré ce soir-là (§ [GameStats]).
+  final String? alias;
 
   /// Position autour de la table (ordre d'ajout).
   final int seatIndex;
@@ -78,6 +87,8 @@ class Player extends Equatable {
     bool? hasEnteredGame,
     bool? hasLeftGame,
     List<Gain>? gains,
+    String? alias,
+    bool clearAlias = false,
   }) {
     return Player(
       id: id,
@@ -90,6 +101,7 @@ class Player extends Equatable {
       hasEnteredGame: hasEnteredGame ?? this.hasEnteredGame,
       hasLeftGame: hasLeftGame ?? this.hasLeftGame,
       gains: gains ?? this.gains,
+      alias: clearAlias ? null : (alias ?? this.alias),
     );
   }
 
@@ -104,5 +116,6 @@ class Player extends Equatable {
         hasEnteredGame,
         hasLeftGame,
         gains,
+        alias,
       ];
 }

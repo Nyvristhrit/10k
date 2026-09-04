@@ -66,6 +66,7 @@ class GameEngine {
         )),
       AddPlayer() => _addPlayer(state, command),
       RenamePlayer() => _renamePlayer(state, command),
+      SetPlayerAlias() => _setPlayerAlias(state, command),
       RemovePlayerBeforeStart() => _removePlayer(state, command),
       UpdateRules() => _updateRules(state, command),
       StartGame() => _startGame(state),
@@ -133,6 +134,39 @@ class GameEngine {
         .map((p) => p.id == cmd.playerId ? p.copyWith(displayName: name) : p)
         .toList();
     final action = _prepAction(GameActionType.playerRenamed, cmd.playerId);
+    final next = state.copyWith(
+      players: players,
+      actions: [...state.actions, action],
+      updatedAt: now,
+    );
+    return _ok(state, next, action);
+  }
+
+  /// Un alias doit commencer par `@` (§ évolution « alias joueur ») : c'est ce
+  /// qui le distingue visuellement du nom d'animal tiré au hasard. On ajoute
+  /// le `@` nous-mêmes si l'appelant l'a omis, plutôt que de refuser.
+  EngineResult _setPlayerAlias(GameState state, SetPlayerAlias cmd) {
+    if (state.status != GameStatus.setup) {
+      return _fail(GameRuleViolationCode.gameAlreadyStarted);
+    }
+    final player = state.playerById(cmd.playerId);
+    if (player == null) return _fail(GameRuleViolationCode.playerNotFound);
+
+    final raw = (cmd.alias ?? '').trim();
+    final clear = raw.isEmpty || raw == '@';
+    String? alias;
+    if (!clear) {
+      final withAt = raw.startsWith('@') ? raw : '@$raw';
+      alias = withAt.length > 24 ? withAt.substring(0, 24) : withAt;
+    }
+
+    final now = _now();
+    final players = state.players
+        .map((p) => p.id == cmd.playerId
+            ? p.copyWith(alias: alias, clearAlias: clear)
+            : p)
+        .toList();
+    final action = _prepAction(GameActionType.playerAliasSet, cmd.playerId);
     final next = state.copyWith(
       players: players,
       actions: [...state.actions, action],

@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../domain/models/alias_profile.dart';
+
 /// Réglages généraux de l'appli (hors règles de jeu), stockés dans un petit
 /// fichier JSON du dossier de documents : le thème (jour/nuit) et le mode trash.
 ///
@@ -91,4 +93,20 @@ class SettingsRepository {
   /// Mémorise le réglage du plateau de dés virtuel.
   void saveDiceTrayEnabled(bool enabled) =>
       _write('diceTrayEnabled', enabled);
+
+  /// Tous les profils d'alias déjà créés sur l'appareil (§ évolution « alias
+  /// joueur ») : de quoi les reproposer d'une partie à l'autre sans les
+  /// retaper, et alimenter l'écran « Alias & profils ».
+  List<AliasProfile> loadAliasProfiles() {
+    final raw = _read()['aliasProfiles'];
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map>()
+        .map((e) => AliasProfile.fromJson(e.cast<String, dynamic>()))
+        .toList();
+  }
+
+  /// Mémorise la liste des profils d'alias.
+  void saveAliasProfiles(List<AliasProfile> profiles) =>
+      _write('aliasProfiles', profiles.map((p) => p.toJson()).toList());
 }

@@ -102,6 +102,16 @@ class GameSetupScreen extends ConsumerWidget {
     final color = colorFor(player, trash: TenkSkin.of(context).trash);
     final bg = AppTheme.fromArgb(color.backgroundArgb);
     final fg = AppTheme.fromArgb(color.foregroundArgb);
+    // La couleur perso du profil (choisie dans l'écran « Alias & profils »)
+    // teinte le bouton alias — sinon un simple survol clair du fond.
+    Color? profileColor;
+    if (player.alias != null) {
+      final matches = ref
+          .watch(aliasProfilesProvider)
+          .where((p) => p.alias == player.alias);
+      if (matches.isNotEmpty) profileColor = Color(matches.first.colorArgb);
+    }
+    final pillColor = profileColor ?? Colors.white.withValues(alpha: 0.22);
 
     return Container(
       decoration: BoxDecoration(
@@ -114,11 +124,44 @@ class GameSetupScreen extends ConsumerWidget {
           Text(emojiFor(player), style: const TextStyle(fontSize: 34)),
           const SizedBox(width: 14),
           Expanded(
-            child: Text(
-              player.displayName,
-              style: TextStyle(
-                  color: fg, fontSize: 20, fontWeight: FontWeight.w700),
-              overflow: TextOverflow.ellipsis,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  player.displayName,
+                  style: TextStyle(
+                      color: fg, fontSize: 20, fontWeight: FontWeight.w700),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                // Le bouton alias : un peu plus clair que la carte par
+                // défaut, ou dans la couleur perso choisie pour ce profil.
+                GestureDetector(
+                  onTap: () => _editAlias(context, ref, player),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: pillColor,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      player.alias ?? '+ @alias',
+                      style: TextStyle(
+                          color: profileColor == null
+                              ? fg.withValues(alpha: 0.8)
+                              : (ThemeData.estimateBrightnessForColor(
+                                          profileColor) ==
+                                      Brightness.dark
+                                  ? Colors.white
+                                  : Colors.black),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           IconButton(
@@ -223,8 +266,117 @@ class GameSetupScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _editAlias(
+      BuildContext context, WidgetRef ref, Player player) async {
+    final result = await showDialog<String>(
+      context: context,
+      builder: (_) => _AliasDialog(currentAlias: player.alias),
+    );
+    if (result == null) return; // annulé
+    final notifier = ref.read(gameControllerProvider.notifier);
+    if (result.isEmpty) {
+      await notifier.setPlayerAlias(player.id, null);
+      return;
+    }
+    final normalized = result.startsWith('@') ? result : '@$result';
+    await notifier.setPlayerAlias(player.id, normalized);
+    ref.read(aliasProfilesProvider.notifier).register(normalized);
+  }
+
   void _snack(BuildContext context, String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+/// Boîte de dialogue de l'alias : saisie d'un nouvel alias, ou choix parmi
+/// tous ceux déjà utilisés sur l'appareil (§ évolution « alias joueur »).
+class _AliasDialog extends ConsumerStatefulWidget {
+  const _AliasDialog({this.currentAlias});
+
+  final String? currentAlias;
+
+  @override
+  ConsumerState<_AliasDialog> createState() => _AliasDialogState();
+}
+
+class _AliasDialogState extends ConsumerState<_AliasDialog> {
+  late final _controller = TextEditingController(
+      text: (widget.currentAlias ?? '').replaceFirst('@', ''));
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() => Navigator.pop(context, _controller.text.trim());
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final profiles = ref.watch(aliasProfilesProvider);
+
+    return AlertDialog(
+      title: const Text('Alias du joueur'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Reste le même d\'une partie à l\'autre — utilisé pour les stats.',
+              style: TextStyle(fontSize: 13, color: scheme.onSurfaceVariant),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: _controller,
+              autofocus: true,
+              maxLength: 20,
+              decoration: const InputDecoration(
+                  prefixText: '@', hintText: 'alias', counterText: ''),
+              onSubmitted: (_) => _submit(),
+            ),
+            if (profiles.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text('Alias déjà utilisés',
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: scheme.onSurfaceVariant)),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final profile in profiles)
+                    InputChip(
+                      backgroundColor:
+                          Color(profile.colorArgb).withValues(alpha: 0.22),
+                      side: BorderSide(color: Color(profile.colorArgb)),
+                      label: Text(profile.alias),
+                      onPressed: () => Navigator.pop(context, profile.alias),
+                      onDeleted: () => ref
+                          .read(aliasProfilesProvider.notifier)
+                          .remove(profile.alias),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        if (widget.currentAlias != null)
+          TextButton(
+            onPressed: () => Navigator.pop(context, ''),
+            child: const Text('Retirer'),
+          ),
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler')),
+        FilledButton(onPressed: _submit, child: const Text('Valider')),
+      ],
+    );
   }
 }

@@ -25,15 +25,23 @@ class GameController extends AsyncNotifier<GameState?> {
   GameRepository get _repo => ref.read(gameRepositoryProvider);
 
   /// Crée une nouvelle partie vide (remplace l'éventuelle partie active).
+  ///
+  /// Une partie **abandonnée** (encore en préparation ou en cours) est
+  /// effacée : elle n'a pas de résultat à garder. Une partie **terminée**
+  /// (gagnant désigné) est conservée sur l'appareil — c'est cet historique
+  /// qui alimente l'écran de statistiques (§ [GameStats]).
   Future<void> newGame({GameRules rules = const GameRules()}) async {
     final previous = state.value;
-    if (previous != null) {
+    if (previous != null && !_isTerminal(previous.status)) {
       await _repo.deleteGame(previous.id);
     }
     final created = _engine.createGame(rules: rules);
     await _repo.saveSnapshot(created);
     state = AsyncData(created);
   }
+
+  bool _isTerminal(GameStatus status) =>
+      status == GameStatus.finished || status == GameStatus.archived;
 
   /// Applique une commande. Renvoie le résultat (succès ou violation) pour que
   /// l'écran puisse afficher un message ou une confirmation.
@@ -60,6 +68,8 @@ class GameController extends AsyncNotifier<GameState?> {
       ));
   Future<EngineResult> renamePlayer(String id, String name) =>
       dispatch(RenamePlayer(playerId: id, newName: name));
+  Future<EngineResult> setPlayerAlias(String id, String? alias) =>
+      dispatch(SetPlayerAlias(playerId: id, alias: alias));
   Future<EngineResult> removePlayer(String id) =>
       dispatch(RemovePlayerBeforeStart(playerId: id));
   Future<EngineResult> updateRules(GameRules rules) =>
@@ -98,5 +108,20 @@ class GameController extends AsyncNotifier<GameState?> {
     await _repo.saveSnapshot(current);
     state = AsyncData(current);
     return true;
+  }
+
+  /// Corrige l'alias d'un joueur de la partie en cours sans passer par le
+  /// moteur : c'est une correction de registre (renommage d'un alias depuis
+  /// l'écran « Alias & profils »), pas une règle du jeu — appelé par
+  /// [AliasProfilesController.rename].
+  Future<void> renameAliasInPlace(String oldAlias, String newAlias) async {
+    final current = state.value;
+    if (current == null) return;
+    final players = current.players
+        .map((p) => p.alias == oldAlias ? p.copyWith(alias: newAlias) : p)
+        .toList();
+    final next = current.copyWith(players: players);
+    await _repo.saveSnapshot(next);
+    state = AsyncData(next);
   }
 }
