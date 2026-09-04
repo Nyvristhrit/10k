@@ -133,6 +133,12 @@ pour le détail commit par commit :
 
 ## Comment publier une nouvelle version (rappel pour la suite)
 
+0. **Bumper `version:` dans `pubspec.yaml`** (ex. `1.3.1+2` → `1.3.2+3`) —
+   c'est ce numéro qui atterrit dans l'APK (`versionName`/`versionCode`
+   Android) et que l'onglet « À propos » affiche (lu dynamiquement via
+   `package_info_plus`, voir commit du 4 sept. 2026). L'oublier désynchronise
+   la version affichée dans l'appli du tag Git/de la Release GitHub — c'est
+   arrivé une fois (resté à `1.0.0+1` jusqu'à la v1.3.1), à ne pas reproduire.
 1. `flutter build apk --release`, `flutter install -d <device-id>` pour tester
    sur le Pixel de Ben.
 2. Copier l'APK à la racine du dépôt : `cp build/app/outputs/flutter-apk/app-release.apk 10K.apk`
