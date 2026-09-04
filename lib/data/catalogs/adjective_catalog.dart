@@ -115,7 +115,7 @@ class AdjectiveCatalog {
     'Salaud·e',
     'Ordure',
     'Raclure',
-    'Raclure de bidet',
+    'Relou',
     'Enflure',
     'Enfoiré·e',
     'Crevard·e',
