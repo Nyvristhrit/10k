@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme/tenk_skin.dart';
 import '../../application/providers/app_providers.dart';
@@ -260,6 +261,8 @@ class _InfoScreenState extends ConsumerState<InfoScreen> {
           const _TrashBanner(),
         ],
         const SizedBox(height: 12),
+        const _SupportCard(),
+        const SizedBox(height: 12),
         Center(
           child: Text('Version 1.0',
               style: TextStyle(
@@ -472,6 +475,58 @@ class _Intro extends StatelessWidget {
           Expanded(
             child: Text(text,
                 style: const TextStyle(fontSize: 15, height: 1.35)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Carte « offrir un café » (Ko-fi) : l'appli reste gratuite et sans pub, ce
+/// lien est purement facultatif — un simple lien externe, aucune donnée
+/// envoyée par ailleurs (cohérent avec le « 100 % hors ligne » ci-dessus).
+class _SupportCard extends StatelessWidget {
+  const _SupportCard();
+
+  static final Uri _koFiUrl = Uri.parse('https://ko-fi.com/qubestudio');
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: scheme.outline.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('☕', style: TextStyle(fontSize: 24)),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Envie de soutenir le projet ?',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 4),
+                Text(
+                  '10K reste gratuit et sans pub. Si tu veux offrir un café, '
+                  'c\'est facultatif et ça fait toujours plaisir.',
+                  style: TextStyle(
+                      fontSize: 14, height: 1.35, color: scheme.onSurfaceVariant),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      launchUrl(_koFiUrl, mode: LaunchMode.externalApplication),
+                  icon: const Text('☕'),
+                  label: const Text('Offrir un café sur Ko-fi'),
+                ),
+              ],
+            ),
           ),
         ],
       ),

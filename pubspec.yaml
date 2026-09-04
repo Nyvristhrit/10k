@@ -39,6 +39,7 @@ dependencies:
   flutter_riverpod: ^2.6.1
   path_provider: ^2.1.6
   wakelock_plus: ^1.2.8
+  url_launcher: ^6.3.2
 
 # La version 2.3.x de path_provider_android tire un paquet natif `jni` dont le
 # script de build Android est incompatible avec Gradle. On reste sur la branche
