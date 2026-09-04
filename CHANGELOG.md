@@ -12,6 +12,17 @@
 
 ## [v1.3.3] — 2026-09-04
 
+> Plusieurs allers-retours le même jour (builds `+2` à `+5`) — la version
+> publique reste `1.3.3` du début à la fin, seul le contenu a évolué.
+
+### Ajouté
+- **Réglage « Dés dans l'appli »** (Réglages → Dés) : permet de masquer
+  l'icône 🎲 du plateau quand on joue avec de vrais dés. Réglage général,
+  mémorisé, activé par défaut.
+- **Teinte aléatoire du plateau de dés** : à chaque ouverture, une couleur
+  tirée dans la palette sage ou trash (dés roses, violets, cyan…), comme
+  l'accent général de l'appli — tapis et faces des dés en dégradé.
+
 ### Corrigé
 - **Noms de joueur tronqués** (mode trash surtout, où espèce + épithète
   cumulent) : le nom sur la tuile était coupé en plein mot avec des « ... »
@@ -20,6 +31,9 @@
   (`player_board_tile.dart`) rétrécit maintenant le texte pour qu'il tienne
   en entier (`FittedBox`) au lieu de le tronquer — verrouillé par un test
   dédié.
+- **Halo du joueur actif peu visible** : bordure plus épaisse, jamais trop
+  pâle, halo plus large et plus intense — on passait facilement à côté pour
+  repérer qui doit jouer.
 
 ### Modifié
 - **Catalogue resserré** : suppression des variantes d'espèces et
@@ -28,6 +42,7 @@
   « Superstitieux·se » retirée du pool sage) — le pire cas passe de 34 à 29-31
   caractères. Le `FittedBox` ci-dessus reste la protection définitive contre
   tout mot encore trop long.
+- « Raclure de bidet » remplacée par « Relou » dans le catalogue trash (Ben).
 
 ## [v1.3.2] — 2026-09-04
 
