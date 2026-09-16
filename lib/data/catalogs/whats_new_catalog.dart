@@ -50,6 +50,7 @@ class WhatsNewCatalog {
       'Une rencontre redonne désormais toujours 3 vies à la victime, même sans vider complètement sa pile.',
       'Les noms de joueur trop longs sont maintenant tronqués par « … » plutôt qu\'affichés en tout petit.',
       'Le plateau de dés virtuel affiche bien 5 dés (au lieu de 6), et la couleur des points reste lisible quelle que soit la teinte tirée.',
+      'Les épithètes des noms par défaut (ex. « Facho », « Farceur ») ne se répètent plus entre deux joueurs de la même partie.',
     ]),
   ];
 

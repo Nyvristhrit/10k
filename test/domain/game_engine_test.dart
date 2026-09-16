@@ -179,6 +179,28 @@ void main() {
       }
     });
 
+    test(
+        'évite de répéter une épithète déjà utilisée à la table '
+        '(signalé par Ben, 2026-09-16)', () {
+      // Random figé sur l'index 0 : sans la protection, les deux joueurs
+      // piocheraient exactement la même épithète (premier élément du pool à
+      // chaque fois). Avec la protection, la deuxième pioche exclut celle
+      // déjà prise, donc l'index 0 du pool restant pointe sur une autre.
+      final engine = GameEngine(
+        idGenerator: () => 'id',
+        clock: () => DateTime(2026, 1, 1),
+        random: _FixedRandom(0),
+      );
+      var s = engine.createGame();
+      s = ok(engine.apply(s, const AddPlayer(trashNames: true)));
+      s = ok(engine.apply(s, const AddPlayer(trashNames: true)));
+      final epithets = s.players.map((p) {
+        return AdjectiveCatalog.trash
+            .firstWhere((e) => p.displayName.endsWith(' $e'));
+      }).toList();
+      expect(epithets[0], isNot(equals(epithets[1])));
+    });
+
     test('emojis (avatars) et couleurs uniques', () {
       final e = makeEngine();
       var s = e.createGame();

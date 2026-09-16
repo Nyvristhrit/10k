@@ -101,7 +101,9 @@ class GameEngine {
       colorId: color.id,
       displayName: name.isEmpty
           ? _scoutName(avatar,
-              trash: cmd.trashNames, custom: cmd.customTrashAdjectives)
+              trash: cmd.trashNames,
+              custom: cmd.customTrashAdjectives,
+              existingPlayers: state.players)
           : name,
       seatIndex: state.players.length,
       createdAt: now,
@@ -808,7 +810,9 @@ class GameEngine {
   /// Nom façon totem scout : l'espèce tirée + une épithète piochée dans le
   /// catalogue sage ou trash (§ [AdjectiveCatalog]), ex. « Bouvreuil Farceur ».
   String _scoutName(AnimalAvatar avatar,
-      {required bool trash, List<String> custom = const []}) {
+      {required bool trash,
+      List<String> custom = const [],
+      List<Player> existingPlayers = const []}) {
     final species = _speciesName(avatar);
     // Les épithètes perso (ajoutées à la table) comptent double dans le tirage :
     // face aux ~70 épithètes du catalogue de base, elles ne sortiraient presque
@@ -818,7 +822,18 @@ class GameEngine {
         ? [...AdjectiveCatalog.trash, ...custom, ...custom]
         : AdjectiveCatalog.safe;
     if (pool.isEmpty) return species;
-    return '$species ${pool[_random.nextInt(pool.length)]}';
+    // Évite qu'une épithète déjà utilisée à cette table ne ressorte pour un
+    // autre joueur (signalé par Ben : deux joueurs avec la même épithète,
+    // même si leur avatar/emoji diffère — celui-ci ne peut déjà pas se
+    // répéter, voir `_drawAvatar`). Comme pour l'avatar et la couleur, on
+    // préfère une épithète encore inédite quand c'est possible ; si toutes
+    // ont déjà servi (table nombreuse, petit catalogue perso…), on retombe
+    // sur le pool complet plutôt que de bloquer l'ajout d'un joueur.
+    final used = existingPlayers.map((p) => p.displayName);
+    final available =
+        pool.where((e) => !used.any((n) => n.endsWith(' $e'))).toList();
+    final effectivePool = available.isNotEmpty ? available : pool;
+    return '$species ${effectivePool[_random.nextInt(effectivePool.length)]}';
   }
 
   AnimalAvatar? _drawAvatar(List<Player> players) {

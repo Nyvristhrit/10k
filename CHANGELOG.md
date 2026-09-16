@@ -29,6 +29,12 @@
   elle-même (`_resolveEncounters`) a été auditée et fonctionne correctement
   (testée), ce n'était pas la source du problème.
 
+- **Épithètes de noms par défaut parfois dupliquées entre joueurs** (ex.
+  deux joueurs « … Facho ») alors que l'avatar/emoji, lui, ne peut déjà pas
+  se répéter (`_drawAvatar`). `GameEngine._scoutName` exclut désormais les
+  épithètes déjà utilisées à la table, avec repli sur le pool complet si
+  toutes ont déjà servi (table nombreuse). Signalé par Ben.
+
 ### Corrigé (suite)
 - **Contraste des points sur certains dés (plateau de dés)** : la teinte des
   points était choisie par simple opposition de teinte (complémentaire sur
