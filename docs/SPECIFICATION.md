@@ -963,7 +963,7 @@ Résultat :
 
 Toutes les conséquences appartiennent à la même action atomique.
 
-## 14.5 Pas de réaction en chaîne en V0.2
+## 14.5 Réaction en chaîne (cascade)
 
 Supposons :
 
@@ -972,21 +972,29 @@ Renard passe de 2 300 à 1 800 à cause de Pingouin.
 Panda se trouve déjà à 1 800.
 ```
 
-Panda ne subit rien.
+Panda subit à son tour une rencontre : il perd son dernier gain actif et
+redescend, exactement comme s'il avait été percuté directement. La baisse de
+Renard peut ainsi déclencher une rencontre en ricochet, éventuellement sur
+plusieurs joueurs d'affilée (`encounterChainsEnabled`, activé par défaut).
 
-La baisse de Renard est une conséquence indirecte et ne déclenche pas une nouvelle rencontre.
-
-Cette décision est volontairement figée pour la V0.2, mais pourra être revalidée plus tard selon les règles du groupe.
+*Historique : cette réaction en chaîne était volontairement désactivée en
+V0.2 (voir décision F-001 initiale) ; revalidée et activée par défaut le
+1er août 2026 après retour du groupe de joueurs.*
 
 ## 14.6 Vies de la victime
 
 Une rencontre ne constitue pas un échec de la victime.
 
-Par défaut :
+Par défaut, quelle que soit l'ampleur de la rencontre (pile vidée ou non) :
 
-- ses vies actuelles sont conservées ;
-- si elle possédait encore d'autres gains actifs, un futur troisième échec peut annuler le gain précédent ;
-- si la rencontre vide complètement sa pile de gains, ses vies sont remises à trois.
+- **ses vies sont remises à trois** ;
+- si elle possédait encore d'autres gains actifs après la rencontre, un futur
+  troisième échec peut annuler le gain précédent.
+
+*Historique : jusqu'au 16 septembre 2026, seule une rencontre qui vidait
+entièrement la pile de la victime restaurait ses vies (une touche partielle
+les laissait inchangées). Amendé après retour d'un joueur du groupe : subir
+une rencontre redonne toujours ses vies, comme sortir à nouveau.*
 
 Exemple important :
 
@@ -2708,7 +2716,7 @@ Ces idées ne doivent pas être implémentées avant stabilisation du MVP :
 | Pénalité | annule le dernier gain actif |
 | Pénalités répétées | remontent la pile des gains |
 | Rencontre | annule le dernier gain actif de chaque victime |
-| Cascade de rencontre | désactivée en V0.2 |
+| Cascade de rencontre | activée par défaut (réaction en chaîne) |
 | Objectif | exactement 10 000 |
 | Dépassement | échec |
 | Fin | un dernier tour à tous les autres joueurs |

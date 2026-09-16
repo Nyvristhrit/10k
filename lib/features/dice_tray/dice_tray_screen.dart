@@ -6,8 +6,9 @@ import 'package:flutter/services.dart';
 import '../../app/theme/tenk_skin.dart';
 import '../../shared/widgets/app_background.dart';
 
-/// Nombre de dés du 10 000.
-const int _kDiceCount = 6;
+/// Nombre de dés du 10 000 (Ben, 2026-09-16 : 5 dés, pas 6 — corrigé après
+/// signalement, le plateau de dés en affichait un de trop).
+const int _kDiceCount = 5;
 
 /// Palette dédiée aux dés : 12 teintes réparties **également** sur le cercle
 /// chromatique (pas de mode/violet qui revient trop souvent — contrairement à
@@ -49,6 +50,40 @@ const Color _neutralInk = Color(0xFF141414);
 Color _complementaryHue(Color c) {
   final hsl = HSLColor.fromColor(c);
   return hsl.withHue((hsl.hue + 180) % 360).toColor();
+}
+
+/// Luminance relative WCAG d'une couleur (0 = noir, 1 = blanc).
+double _relativeLuminance(Color c) {
+  double channel(double v) =>
+      v <= 0.03928 ? v / 12.92 : pow((v + 0.055) / 1.055, 2.4).toDouble();
+  return 0.2126 * channel(c.r) + 0.7152 * channel(c.g) + 0.0722 * channel(c.b);
+}
+
+/// Ratio de contraste WCAG entre deux couleurs (1 = aucun contraste, 21 = max).
+double _contrastRatio(Color a, Color b) {
+  final la = _relativeLuminance(a) + 0.05;
+  final lb = _relativeLuminance(b) + 0.05;
+  return la > lb ? la / lb : lb / la;
+}
+
+/// Garantit un contraste minimal entre [fg] et [bg] : une teinte tirée au
+/// hasard (`_complementaryHue`) reste jolie et cohérente la plupart du
+/// temps, mais certaines paires (vert/violet notamment, signalé par Ben —
+/// « ça ne ressort pas », difficile à distinguer pour un daltonien) tombent
+/// trop près en luminosité malgré la rotation de teinte. Ici on assombrit ou
+/// éclaircit [fg] par petits pas vers le noir/blanc (jamais vers une autre
+/// teinte, pour ne pas la dénaturer) jusqu'à un contraste WCOG non-textuel
+/// correct — un contraste de LUMINANCE reste perceptible même quand la
+/// teinte ne l'est pas, contrairement à la seule opposition de teinte.
+Color _withMinContrast(Color fg, Color bg, {double minRatio = 3.2}) {
+  if (_contrastRatio(fg, bg) >= minRatio) return fg;
+  final lighten = _relativeLuminance(bg) < 0.4;
+  for (var i = 1; i <= 20; i++) {
+    final result =
+        Color.lerp(fg, lighten ? Colors.white : Colors.black, i / 20)!;
+    if (_contrastRatio(result, bg) >= minRatio) return result;
+  }
+  return lighten ? Colors.white : Colors.black;
 }
 
 /// Plateau de dés virtuel (§ évolution « jouer sans dés physiques »).
@@ -340,9 +375,15 @@ class _DieState extends State<_Die> with SingleTickerProviderStateMixin {
     // les deux ressortent nettement de la face au lieu de s'y fondre, et
     // restent cohérents entre eux (signalé : ils ne matchaient pas).
     final complement = _complementaryHue(widget.accent);
-    final pip = trash
-        ? Color.lerp(complement, Colors.white, 0.2)!
-        : Color.lerp(_neutralInk, complement, 0.55)!;
+    // Contraste garanti (WCAG) en plus de l'opposition de teinte : certaines
+    // paires (vert/violet notamment) ne ressortaient pas assez, surtout pour
+    // un daltonien — voir `_withMinContrast`.
+    final pip = _withMinContrast(
+      trash
+          ? Color.lerp(complement, Colors.white, 0.2)!
+          : Color.lerp(_neutralInk, complement, 0.55)!,
+      base,
+    );
     final heldRing = trash
         ? Color.lerp(complement, Colors.white, 0.15)!
         : complement;

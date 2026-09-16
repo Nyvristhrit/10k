@@ -25,7 +25,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 800));
 
     expect(find.textContaining('Relancer'), findsOneWidget);
-    for (var i = 0; i < 6; i++) {
+    for (var i = 0; i < 5; i++) {
       expect(dieAt(i), findsOneWidget);
     }
   });
@@ -35,7 +35,7 @@ void main() {
     await tester.tap(find.text('Lancer les dés'));
     await tester.pumpAndSettle();
 
-    for (var i = 0; i < 6; i++) {
+    for (var i = 0; i < 5; i++) {
       await tester.tap(dieAt(i));
       await tester.pump();
     }
@@ -48,6 +48,6 @@ void main() {
     // « Tout libérer » réapparaît et rend la relance possible.
     await tester.tap(find.text('Tout libérer'));
     await tester.pump();
-    expect(find.textContaining('Relancer (6)'), findsOneWidget);
+    expect(find.textContaining('Relancer (5)'), findsOneWidget);
   });
 }

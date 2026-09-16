@@ -43,12 +43,40 @@
   rencontre continue de s'appliquer »). En revanche, elle **ne redonne jamais un tour** à une victime.
 - **Raison :** cohérent avec « le candidat délogé ne reçoit pas de nouveau tour » (spec §16.4).
 
-### F-003 · Rencontre qui vide la pile → 3 vies restaurées
-- **Question :** si une rencontre retire le dernier gain d'une victime (pile devient vide),
-  ses vies repassent-elles à 3 ?
-- **Choix par défaut :** **oui** (spec §14.6 + invariant 10 : « joueur sans gain actif → vies normalisées à 3 »).
-- **Raison :** application stricte de l'invariant 10. Effet de bord assumé : être rencontré à
-  1 vie / 1 gain « rend » les cœurs. À valider en playtest.
+### F-003 · Rencontre → 3 vies restaurées (amendée 2026-09-16)
+- **Question :** une rencontre restaure-t-elle les vies de la victime, et si oui dans quels cas ?
+- **Choix initial (jusqu'au 2026-09-16) :** seulement si elle retire le dernier gain de la
+  victime et vide entièrement sa pile (spec §14.6 + invariant 10 : « joueur sans gain actif →
+  vies normalisées à 3 »). Une touche partielle laissait les vies inchangées.
+- **Choix actuel :** **toujours**, qu'elle vide la pile ou non — après retour d'un joueur du
+  groupe qui connaît bien le jeu, transmis par Ben. `SPECIFICATION.md` §14.6 amendé en
+  conséquence. Implémenté dans `GameEngine._resolveEncounters`
+  (`lib/domain/services/game_engine.dart`), testé (`test/domain/game_engine_test.dart`).
+- **Raison :** règle du groupe de joueurs, qui prime sur le choix par défaut initial (fait
+  sans validation terrain). Effet de bord assumé : se faire toucher, même légèrement, redonne
+  systématiquement les 3 cœurs — cohérent avec le fait que subir une rencontre reste distinct
+  d'un tour joué.
+
+### F-005 · Le troisième échec doit aussi vérifier les rencontres (bug corrigé 2026-09-16)
+- **Symptôme signalé par Ben :** deux joueurs immobiles au même score (ex. 2400/2400), ce qui
+  ne devrait jamais pouvoir arriver. Confirmé en extrayant et rejouant une vraie partie
+  sauvegardée sur son téléphone (`a5a307da-...json`, partie du 2026-09-10) : après l'action
+  #91 (3ᵉ échec de « Chauve-souris Gros con »), son dernier gain (100) est annulé et elle
+  retombe exactement sur le score de « Grand requin Péquenot·te » (2400), déjà actif à ce
+  total — sans qu'aucune rencontre ne se déclenche.
+- **Cause racine :** `_resolveEncounters` n'était appelé que depuis `_recordScore` (un score
+  qui vient d'être validé). `_applyMiss` (passage / 3ᵉ échec / dépassement compté comme échec)
+  annule le dernier gain actif du joueur **sans jamais vérifier** si son nouveau total tombe
+  sur celui d'un adversaire actif — alors que c'est exactement le même genre d'« atterrissage »
+  qu'un score validé ou qu'une victime qui redescend en cascade (§14.5).
+- **Correctif :** `_applyMiss` appelle désormais `_resolveEncounters` après l'annulation du 3ᵉ
+  échec (si `encounterEnabled`), avec le même chaînage (`encounterChainsEnabled`) que pour un
+  score. Testé (`test/domain/game_engine_test.dart`, cas nommé d'après Ben).
+- **Ce que ce n'était PAS :** le signalement initial faisait penser à un bug dans la cascade de
+  rencontre en elle-même (`_resolveEncounters`, victime qui redescend et en percute une
+  autre) — celle-ci a été auditée en détail et fonctionne correctement, tests à l'appui. Le
+  vrai trou était un chemin totalement différent (3ᵉ échec) qui ne passait jamais par cette
+  fonction.
 
 ### F-004 · Départage d'égalité au classement final
 - **Question :** deux perdants à égalité de score, comment les classer ?

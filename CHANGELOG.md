@@ -10,6 +10,53 @@
 > techniques justifiés), `docs/BACKLOG.md` (reste à faire) et
 > `docs/SPECIFICATION.md` (règles du jeu détaillées).
 
+## [v1.6.0] — 2026-09-16
+
+### Corrigé
+- **Rencontre : les vies n'étaient restaurées que si la pile de la victime se
+  vidait entièrement** (touche partielle → vies inchangées, F-003 d'origine).
+  Un joueur du groupe qui connaît bien le jeu a précisé la règle réellement
+  jouée : **toute rencontre subie redonne ses 3 vies**, même sans vider la
+  pile. `GameEngine._resolveEncounters` amendé en conséquence — voir
+  DECISIONS F-003 et `SPECIFICATION.md` §14.6.
+- **Deux joueurs pouvaient rester bloqués sur le même score** (ex. 2400 et
+  2400), ce qui ne devrait jamais arriver. Confirmé en rejouant une vraie
+  partie sauvegardée sur le téléphone de Ben : un **troisième échec** qui
+  annule le dernier gain d'un joueur pouvait le faire retomber exactement
+  sur le score d'un adversaire actif, sans déclencher de rencontre — seul un
+  score validé (`RecordScore`) vérifiait les rencontres, pas un passage/3ᵉ
+  échec (`PassTurn`). Voir DECISIONS F-005. La réaction en chaîne
+  elle-même (`_resolveEncounters`) a été auditée et fonctionne correctement
+  (testée), ce n'était pas la source du problème.
+
+### Corrigé (suite)
+- **Contraste des points sur certains dés (plateau de dés)** : la teinte des
+  points était choisie par simple opposition de teinte (complémentaire sur
+  le cercle chromatique), qui reste jolie la plupart du temps mais ne
+  garantit pas un contraste de luminosité suffisant pour toutes les paires —
+  Ben a repéré un tirage vert/violet peu lisible (mode trash, ex. face verte
+  foncée + points roses : ratio de contraste ~2,4, sous le minimum recommandé
+  de 3:1). Un garde-fou (`_withMinContrast`, formule de luminance WCAG)
+  assombrit ou éclaircit désormais les points si besoin pour rester lisibles
+  quelle que soit la teinte tirée — utile aussi pour les daltoniens, qui
+  perçoivent mal les oppositions de teinte mais restent sensibles au
+  contraste de luminance.
+- **Plateau de dés virtuel : 6 dés affichés au lieu de 5.** Le 10 000 se joue
+  avec 5 dés ; `_kDiceCount` dans `dice_tray_screen.dart` était fixé à 6
+  depuis l'origine de la fonctionnalité — une hypothèse jamais vérifiée
+  (confusion avec d'autres jeux de dés à 6 dés). Signalé par Ben.
+
+### Modifié
+- **Nom des tuiles joueur** : la taille de police variait selon la longueur
+  du nom (`FittedBox`), au point de rendre certains noms minuscules et
+  illisibles pendant qu'un nom court restait en pleine taille sur une tuile
+  voisine. Remplacé par une taille fixe avec troncature par « … » quand le
+  nom ne tient pas (`PlayerBoardTile`).
+- Dépendances mises à jour (`flutter pub upgrade`, versions mineures/patch
+  uniquement — `wakelock_plus`, `archive`, `image`, `dbus`… ; `equatable` 3.x
+  et `riverpod` 3.x pas repris : montées majeures avec migration, à traiter
+  à part).
+
 ## [v1.5.0] — 2026-09-04
 
 ### Corrigé

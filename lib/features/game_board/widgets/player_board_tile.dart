@@ -183,20 +183,18 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  // `FittedBox` plutôt qu'un `overflow: ellipsis` fixe : un nom
-                  // long (espèce + épithète composées) rétrécit pour tenir en
-                  // entier au lieu d'être coupé au milieu d'un mot.
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      player.displayName,
-                      maxLines: 1,
-                      style: TextStyle(
-                        color: fg,
-                        fontWeight: FontWeight.w800,
-                        fontSize: widget.compact ? 15 : 19,
-                      ),
+                  // Taille fixe, tronqué par « … » si trop long : la taille
+                  // du nom variait trop d'une tuile à l'autre avec le
+                  // `FittedBox` précédent (Ben, 2026-09-16 — noms tantôt
+                  // minuscules, tantôt en pleine taille selon leur longueur).
+                  child: Text(
+                    player.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: fg,
+                      fontWeight: FontWeight.w800,
+                      fontSize: widget.compact ? 15 : 19,
                     ),
                   ),
                 ),

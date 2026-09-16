@@ -45,6 +45,12 @@ class WhatsNewCatalog {
       'Dernière chance : un joueur délogé peut désormais retenter sa chance et redéloger l\'adversaire — la revanche est illimitée, jusqu\'à ce qu\'un candidat traverse un tour complet sans se faire déloger.',
       'Cette fenêtre « Quoi de neuf » : un résumé des nouveautés s\'affiche automatiquement après une mise à jour.',
     ]),
+    WhatsNewRelease(version: '1.6.0', items: [
+      'Correction d\'un vrai bug de rencontre : un troisième échec pouvait faire retomber un joueur exactement sur le score d\'un autre sans déclencher de rencontre (deux joueurs restaient alors bloqués au même total).',
+      'Une rencontre redonne désormais toujours 3 vies à la victime, même sans vider complètement sa pile.',
+      'Les noms de joueur trop longs sont maintenant tronqués par « … » plutôt qu\'affichés en tout petit.',
+      'Le plateau de dés virtuel affiche bien 5 dés (au lieu de 6), et la couleur des points reste lisible quelle que soit la teinte tirée.',
+    ]),
   ];
 
   /// Les versions strictement postérieures à [seenVersion], dans l'ordre

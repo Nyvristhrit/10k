@@ -339,6 +339,26 @@ void main() {
       expect(livesOf(s, a), 3);
     });
 
+    test(
+        'troisième échec qui retombe sur le score d\'un autre joueur '
+        'déclenche une rencontre (cas signalé par Ben, 2026-09-16)', () {
+      final r = start(2, mode: TurnMode.free);
+      final e = r.engine;
+      final a = r.ids[0];
+      final b = r.ids[1];
+      var s = ok(e.apply(r.state, RecordScore(playerId: a, amount: 1000)));
+      s = ok(e.apply(s, RecordScore(playerId: a, amount: 800)));
+      s = ok(e.apply(s, RecordScore(playerId: b, amount: 1000)));
+      s = ok(e.apply(s, PassTurn(playerId: a)));
+      s = ok(e.apply(s, PassTurn(playerId: a)));
+      // 3e échec : A perd son dernier gain (800) et retombe exactement sur
+      // le score de B (1000) — ça doit déclencher une rencontre sur B.
+      s = ok(e.apply(s, PassTurn(playerId: a, confirmed: true)));
+      expect(scoreOf(s, a), 1000);
+      expect(scoreOf(s, b), 0); // B percuté par ricochet du 3e échec de A
+      expect(livesOf(s, b), 3);
+    });
+
     test('troisième échec exige une confirmation', () {
       final r = start(2);
       final e = r.engine;
@@ -441,8 +461,8 @@ void main() {
     });
 
     test(
-        'victime d\'une rencontre partielle : ne récupère pas ses cœurs '
-        '(bug corrigé)', () {
+        'victime d\'une rencontre partielle : récupère ses cœurs '
+        '(règle confirmée le 2026-09-16, amende F-003/§14.6)', () {
       final r = start(2);
       final e = r.engine;
       final victim = r.ids[0];
@@ -453,8 +473,8 @@ void main() {
       s = ok(e.apply(s, RecordScore(playerId: marker, amount: 1300)));
       // Seul le dernier gain (400) part : la pile n'est pas vidée.
       expect(scoreOf(s, victim), 900);
-      // Subir une rencontre n'est pas un tour joué : les cœurs restent à 2.
-      expect(livesOf(s, victim), 2);
+      // Une rencontre redonne toujours ses vies à la victime.
+      expect(livesOf(s, victim), 3);
     });
 
     test(
@@ -508,6 +528,33 @@ void main() {
       expect(scoreOf(undone, panda), 1800);
       expect(pile(undone, renard), [1000, 800, 500]);
       expect(pile(undone, panda), [1800]);
+    });
+
+    test(
+        'cascade : une victime qui redescend récupère ses cœurs ET percute '
+        'un résident (cas signalé par Ben, 2026-09-16 : 9500 -> 9000)', () {
+      final r = start(3);
+      final e = r.engine;
+      final ben = r.ids[0];
+      final tiers = r.ids[1];
+      final marker = r.ids[2];
+
+      // Ben monte à 9500 (dernier gain 500). Un tiers se pose déjà à 9000.
+      var s = ok(e.apply(r.state, RecordScore(playerId: ben, amount: 9000)));
+      s = ok(e.apply(s, RecordScore(playerId: ben, amount: 500)));
+      s = ok(e.apply(s, PassTurn(playerId: ben))); // vies 2 avant la rencontre
+      s = ok(e.apply(s, RecordScore(playerId: tiers, amount: 9000)));
+
+      // Le marqueur atteint 9500 : percute Ben (perd 500, retombe à 9000),
+      // qui percute aussitôt le tiers déjà présent à 9000 (cascade).
+      s = ok(e.apply(s, RecordScore(playerId: marker, amount: 9500)));
+      expect(scoreOf(s, marker), 9500);
+      expect(scoreOf(s, ben), 9000); // percuté, redescend sur le tiers
+      expect(scoreOf(s, tiers), 0); // percuté par ricochet
+      // Une rencontre redonne toujours ses vies, même sans vider la pile.
+      expect(livesOf(s, ben), 3);
+      final summary = encounterOfAction(s.actions.last);
+      expect(summary!.victims.map((v) => v.playerId).toList(), [ben, tiers]);
     });
 
     test('cascade désactivable : une seule victime si chaînage coupé', () {

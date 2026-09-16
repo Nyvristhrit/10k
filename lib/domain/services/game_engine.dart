@@ -300,7 +300,7 @@ class GameEngine {
         return _fail(GameRuleViolationCode.confirmationRequiredForOvershoot,
             'Ce score ferait dépasser $target. Le tour deviendra un échec.');
       }
-      _applyMiss(ctx, cmd.playerId);
+      _applyMiss(ctx, cmd.playerId, state.rules);
       _advanceAfterTurn(ctx, cmd.playerId,
           wasFinalChance: wasFinalChance, startedFinalChance: false);
       final action = _turnAction(GameActionType.overshootRecorded, cmd.playerId,
@@ -348,7 +348,7 @@ class GameEngine {
 
     final wasFinalChance = state.status == GameStatus.finalChance;
     final ctx = _Ctx.from(state, _newId(), _newId, _now);
-    _applyMiss(ctx, cmd.playerId);
+    _applyMiss(ctx, cmd.playerId, state.rules);
     _advanceAfterTurn(ctx, cmd.playerId,
         wasFinalChance: wasFinalChance, startedFinalChance: false);
 
@@ -525,7 +525,7 @@ class GameEngine {
   }
 
   /// Applique la logique d'échec (passage ou dépassement) sur un joueur (§23).
-  void _applyMiss(_Ctx ctx, String playerId) {
+  void _applyMiss(_Ctx ctx, String playerId, GameRules rules) {
     final player = ctx.player(playerId);
     if (!player.hasActiveGain) {
       ctx.restoreLives(playerId); // aucune vie perdue, normalisation à max
@@ -539,6 +539,13 @@ class GameEngine {
     ctx.loseLife(playerId);
     ctx.cancelLastActiveGain(playerId, GainCancelReason.thirdMiss);
     ctx.restoreLives(playerId);
+    // Le total peut retomber exactement sur celui d'un autre joueur déjà en
+    // lice : ce cas est une vraie rencontre, comme pour une victime qui
+    // redescend en cascade (bug signalé par Ben le 2026-09-16 : deux joueurs
+    // immobiles au même score après un troisième échec, sans rencontre).
+    if (rules.encounterEnabled) {
+      _resolveEncounters(ctx, playerId, chain: rules.encounterChainsEnabled);
+    }
   }
 
   /// Résout les rencontres déclenchées par le marqueur, **en cascade** (§14).
@@ -548,11 +555,10 @@ class GameEngine {
   /// victime peut à son tour percuter un autre joueur au même total, et ainsi
   /// de suite (`chain`). Un joueur ne peut être percuté qu'une fois par cascade,
   /// et le nombre de gains actifs décroît à chaque coup : la cascade se termine
-  /// donc toujours. Contrairement à un tour réussi, une victime **ne récupère
-  /// pas** ses cœurs simplement pour avoir été touchée : subir une rencontre
-  /// n'est pas un tour joué (bug corrigé). En revanche, si le coup lui vide
-  /// entièrement sa pile (retour à 0), elle redevient « hors jeu » et ses
-  /// vies sont normalisées à 3 (F-003, DECISIONS.md).
+  /// donc toujours. Une victime **récupère toujours ses vies** en étant
+  /// touchée, qu'elle vide entièrement sa pile ou non (règle confirmée par un
+  /// joueur du groupe le 2026-09-16, amende F-003/§14.6 de SPECIFICATION.md —
+  /// auparavant seule la pile totalement vidée restaurait les vies).
   void _resolveEncounters(_Ctx ctx, String markerId, {required bool chain}) {
     // File des « arrivants » : joueurs qui viennent d'atterrir sur un nouveau
     // total et peuvent percuter un résident. On commence par le marqueur.
@@ -580,13 +586,9 @@ class GameEngine {
         if (cancelled == null) continue;
         bumped.add(residentId);
         victims.add(residentId);
-        // Pile vidée (retombée à 0) : la victime redevient « hors jeu » comme
-        // au tout début — elle doit ressortir (F-003, DECISIONS.md). Ses vies
-        // sont normalisées à 3, contrairement à une rencontre qui ne fait que
-        // l'entamer (subir une rencontre n'est pas un tour joué).
-        if (!ctx.player(residentId).hasActiveGain) {
-          ctx.restoreLives(residentId);
-        }
+        // Une rencontre redonne ses vies à la victime (F-003/§14.6 amendé) :
+        // que sa pile se vide entièrement ou non.
+        ctx.restoreLives(residentId);
         // La victime redescend : en mode cascade, elle peut percuter à son tour.
         if (chain) queue.add(residentId);
       }
