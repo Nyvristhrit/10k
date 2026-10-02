@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10K — Mentions légales</title>
+<meta name="description" content="Mentions légales du site et de l'application 10K : éditeur, hébergeur, licences.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
+<style>
+  @font-face {
+    font-family: "Space Grotesk";
+    src: url("fonts/SpaceGrotesk.ttf") format("truetype");
+    font-weight: 300 700;
+    font-display: swap;
+  }
+  :root {
+    --bg-0: #0b0a0f;
+    --bg-1: #141319;
+    --bg-2: #201f2b;
+    --ink: #f4f3f8;
+    --ink-dim: #b8b5c4;
+    --card: rgba(255,255,255,0.045);
+    --card-border: rgba(255,255,255,0.09);
+    --green: #22C55E;
+    --accent: #6366F1;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: radial-gradient(120% 90% at 50% -10%, var(--bg-2), var(--bg-1) 55%, var(--bg-0) 100%);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 40px 16px 80px; }
+  .back { color: var(--ink-dim); text-decoration: none; font-size: 15px; }
+  .back:hover { color: var(--ink); }
+  h1 { font-size: clamp(30px, 7vw, 42px); line-height: 1.15; margin: 28px 0 6px; }
+  .updated { color: var(--ink-dim); font-size: 14px; margin: 0 0 28px; }
+  .tldr {
+    background: rgba(34, 197, 94, 0.10);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+    border-radius: 18px;
+    padding: 18px 20px;
+    margin-bottom: 28px;
+    font-size: 17px;
+  }
+  .tldr b { color: var(--green); }
+  section {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 18px;
+    padding: 6px 20px 14px;
+    margin-bottom: 16px;
+  }
+  h2 { font-size: 20px; margin: 16px 0 6px; }
+  p, li { color: var(--ink-dim); }
+  b, strong { color: var(--ink); }
+  ul { padding-left: 20px; }
+  a { color: #a5b4fc; }
+  footer {
+    text-align: center;
+    color: var(--ink-dim);
+    font-size: 13px;
+    padding-top: 16px;
+    margin-top: 28px;
+    border-top: 1px solid var(--card-border);
+  }
+  footer a { color: var(--ink-dim); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="./">← Retour à 10K</a>
+    <h1>Mentions légales</h1>
+    <p class="updated">Dernière mise à jour : 2 octobre 2026</p>
+
+    <section>
+      <h2>Éditeur</h2>
+      <p>Ce site et l'application 10K sont édités par <b>Ben</b>, particulier,
+        à titre non professionnel et gratuit.</p>
+      <p>Conformément à l'article 6, III, 2 de la loi n° 2004-575 du 21 juin
+        2004 pour la confiance dans l'économie numérique (LCEN), l'éditeur,
+        personne physique non professionnelle, a choisi de préserver son
+        anonymat ; les éléments permettant de l'identifier ont été communiqués
+        à l'hébergeur.</p>
+      <p><b>Contact :</b> via la page
+        <a href="https://github.com/Nyvristhrit/10k/issues" target="_blank" rel="noopener">« Issues »
+        du projet sur GitHub</a>.</p>
+    </section>
+
+    <section>
+      <h2>Hébergeur</h2>
+      <p><b>GitHub, Inc.</b><br>
+        88 Colin P. Kelly Jr. Street, San Francisco, CA 94107, États-Unis<br>
+        <a href="https://github.com" target="_blank" rel="noopener">github.com</a></p>
+    </section>
+
+    <section>
+      <h2>Propriété intellectuelle et licences</h2>
+      <ul>
+        <li>Le code de l'application et de ce site est publié sous
+          <a href="https://github.com/Nyvristhrit/10k/blob/main/LICENSE" target="_blank" rel="noopener">licence MIT</a> :
+          libre de le réutiliser, en conservant la mention de licence.</li>
+        <li>La police <b>Space Grotesk</b> (Florian Karsten) est distribuée sous
+          <a href="https://openfontlicense.org" target="_blank" rel="noopener">SIL
+          Open Font License 1.1</a>.</li>
+        <li>Les emojis affichés sont ceux du système de ton téléphone ou de ton
+          navigateur.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Données personnelles</h2>
+      <p>Aucune donnée personnelle n'est collectée, ni par l'appli ni par le
+        site : voir la <a href="confidentialite.html">politique de
+        confidentialité</a>.</p>
+    </section>
+
+    <section>
+      <h2>Responsabilité</h2>
+      <p>10K est un compagnon de jeu gratuit, fourni tel quel, sans garantie.
+        Il sert à tenir les scores d'un jeu de dés entre amis : aucune mise
+        d'argent n'y est proposée ni encouragée.</p>
+    </section>
+
+    <footer>
+      <a href="./">10K</a> · <a href="confidentialite.html">Confidentialité</a>
+    </footer>
+  </div>
+</body>
+</html>

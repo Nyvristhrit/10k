@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../application/controllers/custom_adjectives_controller.dart';
+import '../../application/controllers/trash_adjectives_controller.dart';
 import '../../application/providers/app_providers.dart';
-import '../../data/catalogs/adjective_catalog.dart';
 
-/// Section des réglages qui laisse la table ajouter ses propres épithètes
-/// trash (blagues, références perso), piochées en plus du catalogue de base
-/// quand un nom par défaut est tiré en mode trash. Visible seulement quand le
-/// mode trash est actif — pas verrouillée par la partie en cours : c'est un
-/// réglage général, pas une règle du jeu.
+/// Section des réglages où la table gère **toute** la liste des épithètes
+/// du mode trash (v1.6.1, voir DECISIONS F-006) : retirer celles qui ne lui
+/// plaisent pas, ajouter les siennes (blagues, références perso), ou revenir
+/// à la liste par défaut. Visible seulement quand le mode trash est actif —
+/// pas verrouillée par la partie en cours : c'est un réglage général, pas une
+/// règle du jeu.
 class TrashAdjectivesSection extends ConsumerStatefulWidget {
   const TrashAdjectivesSection({super.key});
 
@@ -30,18 +30,41 @@ class _TrashAdjectivesSectionState
 
   void _add() {
     if (_atLimit) return;
-    ref.read(customTrashAdjectivesProvider.notifier).add(_controller.text);
+    ref.read(trashAdjectivesProvider.notifier).add(_controller.text);
     _controller.clear();
   }
 
-  bool get _atLimit => ref.read(customTrashAdjectivesProvider).length >=
-      CustomAdjectivesController.maxCount;
+  bool get _atLimit => ref.read(trashAdjectivesProvider).length >=
+      TrashAdjectivesController.maxCount;
+
+  Future<void> _confirmReset() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Revenir à la liste d\'origine ?'),
+        content: const Text(
+            'Les épithètes que tu as ajoutées seront effacées, et celles que '
+            'tu avais retirées reviendront.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Annuler')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Rétablir')),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      ref.read(trashAdjectivesProvider.notifier).resetToDefaults();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final custom = ref.watch(customTrashAdjectivesProvider);
-    final atLimit = custom.length >= CustomAdjectivesController.maxCount;
+    final adjectives = ref.watch(trashAdjectivesProvider);
+    final atLimit = adjectives.length >= TrashAdjectivesController.maxCount;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
@@ -72,8 +95,10 @@ class _TrashAdjectivesSectionState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Ajoute tes propres épithètes, piochées en plus des '
-                  '${AdjectiveCatalog.trash.length} de base.',
+                  'Les épithètes accolées à l\'animal quand un nom est tiré '
+                  'en mode trash. Retire celles qui ne te plaisent pas '
+                  '(croix), ajoute les tiennes : la liste reste sur ce '
+                  'téléphone.',
                   style:
                       TextStyle(color: scheme.onSurfaceVariant, fontSize: 13),
                 ),
@@ -88,7 +113,8 @@ class _TrashAdjectivesSectionState
                         enabled: !atLimit,
                         decoration: InputDecoration(
                           hintText: atLimit
-                              ? '20 épithètes, le maximum'
+                              ? '${TrashAdjectivesController.maxCount} '
+                                  'épithètes, le maximum'
                               : 'Écris une épithète ici',
                           counterText: '',
                           isDense: true,
@@ -131,27 +157,43 @@ class _TrashAdjectivesSectionState
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '${custom.length} / ${CustomAdjectivesController.maxCount}',
+                  '${adjectives.length} / ${TrashAdjectivesController.maxCount}',
                   style: TextStyle(
                       color: scheme.onSurfaceVariant.withValues(alpha: 0.8),
                       fontSize: 12),
                 ),
-                if (custom.isNotEmpty) ...[
-                  const SizedBox(height: 12),
+                const SizedBox(height: 12),
+                if (adjectives.isEmpty)
+                  Text(
+                    'Liste vide : les noms tirés se limiteront à l\'animal.',
+                    style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontSize: 13,
+                        fontStyle: FontStyle.italic),
+                  )
+                else
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      for (final adjective in custom)
+                      for (final adjective in adjectives)
                         InputChip(
                           label: Text(adjective),
                           onDeleted: () => ref
-                              .read(customTrashAdjectivesProvider.notifier)
+                              .read(trashAdjectivesProvider.notifier)
                               .remove(adjective),
                         ),
                     ],
                   ),
-                ],
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: _confirmReset,
+                    icon: const Icon(Icons.restart_alt, size: 18),
+                    label: const Text('Rétablir la liste d\'origine'),
+                  ),
+                ),
               ],
             ),
           ),

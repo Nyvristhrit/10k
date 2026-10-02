@@ -81,6 +81,7 @@ class Player extends Equatable {
   bool get isEligibleToPlay => !hasLeftGame;
 
   Player copyWith({
+    String? colorId,
     String? displayName,
     int? seatIndex,
     int? lives,
@@ -93,7 +94,7 @@ class Player extends Equatable {
     return Player(
       id: id,
       avatarId: avatarId,
-      colorId: colorId,
+      colorId: colorId ?? this.colorId,
       displayName: displayName ?? this.displayName,
       seatIndex: seatIndex ?? this.seatIndex,
       createdAt: createdAt,

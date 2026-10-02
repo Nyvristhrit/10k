@@ -28,8 +28,32 @@
       dépôt, procédure documentée (§36.3). Aujourd'hui l'APK est signé en
       debug (suffisant pour la distribution GitHub actuelle, pas pour le Play
       Store).
-- [ ] **Play Store** : compte Play Console (25 $ à vie), build `.aab`,
-      visuels — voir la conversation avec Ben pour le détail des étapes.
+- [ ] **Play Store** — audit fait le 2026-10-02 : le **contenu passe**
+      (liste trash adoucie, DECISIONS F-006 ; aucune donnée collectée, pas de
+      permission Internet, targetSdk 36 OK). Reste, **reporté par Ben à plus
+      tard** :
+  - [ ] **Compte Play Console au nom de sa société** (pas en perso) →
+        récupérer d'abord un **numéro D-U-N-S** (gratuit, exigé par Google
+        pour un compte « organisation »). Avantage : un compte organisation
+        n'est pas soumis au test fermé obligatoire (12 testeurs × 14 jours)
+        imposé aux comptes personnels récents.
+  - [ ] **Signature release** (ligne ci-dessus) — clé dédiée, à sauvegarder.
+  - [ ] **Build `.aab`** (`flutter build appbundle`) au lieu de l'APK.
+  - [ ] **Retirer le bouton Ko-fi de la version Play Store** (onglet « À
+        propos », `info_screen.dart`) : un lien de don dans l'appli risque
+        un refus (règles de paiement Google Play). Le garder dans la version
+        GitHub et sur la page de téléchargement.
+  - [ ] **Mettre à jour les mentions légales** (`docs/mentions-legales.html`)
+        quand l'appli passera sous la société : raison sociale, forme
+        juridique, SIRET, adresse du siège, directeur de la publication,
+        e-mail de contact (aujourd'hui : éditeur particulier anonyme, contact
+        via les Issues GitHub). Idem « Éditeur » dans la politique de
+        confidentialité si besoin.
+  - [ ] Questionnaire de classification (IARC) : **déclarer le mode trash**
+        (contenu caché compris) ; formulaire « Sécurité des données » :
+        aucune donnée collectée. URL de confidentialité à donner :
+        `https://nyvristhrit.github.io/10k/confidentialite.html`.
+  - [ ] Fiche Play Store : captures d'écran, description, bannière.
       Distribution GitHub (voir `CHANGELOG.md`) en attendant.
 
 ## 🧱 Dette technique / robustesse
@@ -49,6 +73,17 @@
       défaut F-001..F-004 de `DECISIONS.md`.
 
 ---
+
+## 💡 Idées à décider plus tard
+
+- [ ] **Bruitages de prout (mode trash)** — idée de Ben, 2026-10-02, pas
+      encore validée. Quand le joueur 💩 (dernier, `lastPlaceId`) saisit son
+      score, chaque appui sur +1000/+500/+100 joue un prout tiré au hasard
+      parmi 6–8 sons différents. Interrupteur dans les réglages (section
+      trash). Sons à **générer par programme** (pas de droits d'auteur) ou
+      CC0 ; nécessite un paquet audio (ex. `audioplayers`). Suit le volume
+      « médias ». Question ouverte : seulement le 💩, ou tout le monde en
+      mode trash ?
 
 ## Idées post-V1 (rappel spec §38)
 Calculateur de combinaisons de dés (deviner/valider une combinaison à partir

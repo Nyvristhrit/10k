@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tenk/data/catalogs/adjective_catalog.dart';
 import 'package:tenk/data/repositories/settings_repository.dart';
 
 void main() {
@@ -14,7 +16,7 @@ void main() {
     final repo = SettingsRepository(dir);
     expect(repo.loadThemeMode(), ThemeMode.dark);
     expect(repo.loadTrashMode(), isFalse);
-    expect(repo.loadCustomTrashAdjectives(), isEmpty);
+    expect(repo.loadTrashAdjectives(), AdjectiveCatalog.trash);
     expect(repo.loadKeepScreenOnEnabled(), isTrue);
     expect(repo.loadDiceTrayEnabled(), isTrue);
   });
@@ -27,12 +29,26 @@ void main() {
     expect(reloaded.loadDiceTrayEnabled(), isFalse);
   });
 
-  test('mémorise les épithètes trash perso', () {
+  test('mémorise la liste complète des épithètes trash', () {
     final repo = SettingsRepository(dir);
-    repo.saveCustomTrashAdjectives(['Aubergine', 'Chapardeur']);
+    repo.saveTrashAdjectives(['Aubergine', 'Chapardeur']);
 
     final reloaded = SettingsRepository(dir);
-    expect(reloaded.loadCustomTrashAdjectives(), ['Aubergine', 'Chapardeur']);
+    expect(reloaded.loadTrashAdjectives(), ['Aubergine', 'Chapardeur']);
+  });
+
+  test('une liste vidée par la table reste vide', () {
+    SettingsRepository(dir).saveTrashAdjectives([]);
+    expect(SettingsRepository(dir).loadTrashAdjectives(), isEmpty);
+  });
+
+  test('reprend les ajouts perso des versions ≤ 1.6.0', () {
+    // Ancien format : seuls les ajouts perso étaient mémorisés, en plus d'un
+    // catalogue figé dans l'appli.
+    File('${dir.path}/settings.json').writeAsStringSync(
+        jsonEncode({'customTrashAdjectives': ['Aubergine', 'Chapardeur']}));
+    expect(SettingsRepository(dir).loadTrashAdjectives(),
+        [...AdjectiveCatalog.trash, 'Aubergine', 'Chapardeur']);
   });
 
   test('mémorise le thème et le mode trash', () {

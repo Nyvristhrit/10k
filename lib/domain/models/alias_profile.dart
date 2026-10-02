@@ -7,7 +7,11 @@ import 'package:equatable/equatable.dart';
 /// modalité de sélection rapide (au moment d'assigner un alias à un joueur)
 /// et l'écran « Alias & profils » (bilan par personne, renommage).
 class AliasProfile extends Equatable {
-  const AliasProfile({required this.alias, required this.colorArgb});
+  const AliasProfile({
+    required this.alias,
+    required this.colorArgb,
+    this.applyToTile = false,
+  });
 
   /// Toujours préfixé de `@` (ex. `@Ben`).
   final String alias;
@@ -15,18 +19,30 @@ class AliasProfile extends Equatable {
   /// Couleur choisie par la personne pour repérer sa carte (0xAARRGGBB).
   final int colorArgb;
 
-  AliasProfile copyWith({String? alias, int? colorArgb}) => AliasProfile(
+  /// La tuile du joueur prend-elle cette couleur (au lieu d'une couleur tirée
+  /// au hasard) quand on lui donne cet alias ? Sinon, seule la pastille de
+  /// l'alias est colorée. Désactivé par défaut (voir DECISIONS F-007).
+  final bool applyToTile;
+
+  AliasProfile copyWith({String? alias, int? colorArgb, bool? applyToTile}) =>
+      AliasProfile(
         alias: alias ?? this.alias,
         colorArgb: colorArgb ?? this.colorArgb,
+        applyToTile: applyToTile ?? this.applyToTile,
       );
 
-  Map<String, dynamic> toJson() => {'alias': alias, 'colorArgb': colorArgb};
+  Map<String, dynamic> toJson() => {
+        'alias': alias,
+        'colorArgb': colorArgb,
+        'applyToTile': applyToTile,
+      };
 
   static AliasProfile fromJson(Map<String, dynamic> j) => AliasProfile(
         alias: j['alias'] as String,
         colorArgb: j['colorArgb'] as int,
+        applyToTile: j['applyToTile'] as bool? ?? false,
       );
 
   @override
-  List<Object?> get props => [alias, colorArgb];
+  List<Object?> get props => [alias, colorArgb, applyToTile];
 }

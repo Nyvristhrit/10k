@@ -32,4 +32,16 @@ void main() {
     expect(ColorCatalog.byId('inexistant'), isNull);
     expect(ColorCatalog.byId('inexistant', toxicPalette: true), isNull);
   });
+
+  test("tileForArgb : retrouve la tuile d'une couleur de profil", () {
+    // Couleur de tuile exacte (nuancier des profils depuis la v1.6.1).
+    for (final c in ColorCatalog.all) {
+      expect(ColorCatalog.tileForArgb(c.backgroundArgb).id, c.id);
+    }
+    // Anciennes couleurs d'accent des profils (≤ v1.6.0) sans tuile exacte.
+    expect(ColorCatalog.tileForArgb(0xFF6366F1).id, 'indigo');
+    expect(ColorCatalog.tileForArgb(0xFF0EA5E9).id, 'cyan');
+    // Couleur quelconque : la plus proche.
+    expect(ColorCatalog.tileForArgb(0xFFFF0000).id, 'ruby');
+  });
 }

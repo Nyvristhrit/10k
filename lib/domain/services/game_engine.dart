@@ -102,7 +102,7 @@ class GameEngine {
       displayName: name.isEmpty
           ? _scoutName(avatar,
               trash: cmd.trashNames,
-              custom: cmd.customTrashAdjectives,
+              trashPool: cmd.trashAdjectives,
               existingPlayers: state.players)
           : name,
       seatIndex: state.players.length,
@@ -162,12 +162,26 @@ class GameEngine {
       alias = withAt.length > 24 ? withAt.substring(0, 24) : withAt;
     }
 
+    // Couleur du profil : le joueur la prend, et celui qui l'avait (couleurs
+    // uniques à la table) récupère en échange l'ancienne couleur du joueur.
+    final wanted = clear ? null : cmd.preferredColorId;
+    final applyColor = wanted != null &&
+        wanted != player.colorId &&
+        ColorCatalog.byId(wanted) != null;
+
     final now = _now();
-    final players = state.players
-        .map((p) => p.id == cmd.playerId
-            ? p.copyWith(alias: alias, clearAlias: clear)
-            : p)
-        .toList();
+    final players = state.players.map((p) {
+      if (p.id == cmd.playerId) {
+        return p.copyWith(
+            alias: alias,
+            clearAlias: clear,
+            colorId: applyColor ? wanted : null);
+      }
+      if (applyColor && p.colorId == wanted) {
+        return p.copyWith(colorId: player.colorId);
+      }
+      return p;
+    }).toList();
     final action = _prepAction(GameActionType.playerAliasSet, cmd.playerId);
     final next = state.copyWith(
       players: players,
@@ -811,16 +825,12 @@ class GameEngine {
   /// catalogue sage ou trash (§ [AdjectiveCatalog]), ex. « Bouvreuil Farceur ».
   String _scoutName(AnimalAvatar avatar,
       {required bool trash,
-      List<String> custom = const [],
+      List<String> trashPool = AdjectiveCatalog.trash,
       List<Player> existingPlayers = const []}) {
     final species = _speciesName(avatar);
-    // Les épithètes perso (ajoutées à la table) comptent double dans le tirage :
-    // face aux ~70 épithètes du catalogue de base, elles ne sortiraient presque
-    // jamais sinon. Les dupliquer dans le pool est la façon la plus simple de
-    // leur donner un poids 2× sous un tirage uniforme.
-    final pool = trash
-        ? [...AdjectiveCatalog.trash, ...custom, ...custom]
-        : AdjectiveCatalog.safe;
+    // En mode trash, on pioche uniquement dans la liste de la table (réglages,
+    // entièrement modifiable — voir DECISIONS F-006).
+    final pool = trash ? trashPool : AdjectiveCatalog.safe;
     if (pool.isEmpty) return species;
     // Évite qu'une épithète déjà utilisée à cette table ne ressorte pour un
     // autre joueur (signalé par Ben : deux joueurs avec la même épithète,

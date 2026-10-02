@@ -64,4 +64,39 @@ class ColorCatalog {
     }
     return null;
   }
+
+  /// Couleur de tuile correspondant à une couleur de profil d'alias (ARGB).
+  ///
+  /// Les profils mémorisent leur couleur en ARGB. Depuis la v1.6.1 le nuancier
+  /// des profils propose directement les couleurs de tuile (correspondance
+  /// exacte) ; les profils plus anciens ont pu choisir dans l'ancienne
+  /// palette d'accent, dont deux teintes n'existent pas en tuile — on les
+  /// ramène à la famille équivalente, puis, par sécurité, à la teinte la plus
+  /// proche en RVB.
+  static ColorToken tileForArgb(int argb) {
+    for (final c in all) {
+      if (c.backgroundArgb == argb) return c;
+    }
+    final legacy = _legacyAccents[argb];
+    if (legacy != null) return byId(legacy)!;
+    int dist(int a, int b) {
+      var d = 0;
+      for (final shift in const [16, 8, 0]) {
+        final x = ((a >> shift) & 0xFF) - ((b >> shift) & 0xFF);
+        d += x * x;
+      }
+      return d;
+    }
+
+    return all.reduce((best, c) =>
+        dist(c.backgroundArgb, argb) < dist(best.backgroundArgb, argb)
+            ? c
+            : best);
+  }
+
+  /// Anciennes couleurs d'accent des profils sans équivalent exact en tuile.
+  static const Map<int, String> _legacyAccents = {
+    0xFF6366F1: 'indigo',
+    0xFF0EA5E9: 'cyan',
+  };
 }

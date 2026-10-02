@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/theme/app_theme.dart';
 import '../../app/theme/tenk_skin.dart';
 import '../../application/providers/app_providers.dart';
+import '../../data/catalogs/color_catalog.dart';
 import '../../domain/models/game_state.dart';
 import '../../domain/models/player.dart';
 import '../../domain/services/game_engine.dart';
@@ -102,14 +103,20 @@ class GameSetupScreen extends ConsumerWidget {
     final color = colorFor(player, trash: TenkSkin.of(context).trash);
     final bg = AppTheme.fromArgb(color.backgroundArgb);
     final fg = AppTheme.fromArgb(color.foregroundArgb);
-    // La couleur perso du profil (choisie dans l'écran « Alias & profils »)
-    // teinte le bouton alias — sinon un simple survol clair du fond.
+    // La couleur perso du profil (« Alias & profils ») teinte le bouton
+    // alias — sinon (pas d'alias, ou même couleur que la tuile, auquel cas
+    // la pastille disparaîtrait) un simple survol clair du fond.
     Color? profileColor;
     if (player.alias != null) {
       final matches = ref
           .watch(aliasProfilesProvider)
           .where((p) => p.alias == player.alias);
-      if (matches.isNotEmpty) profileColor = Color(matches.first.colorArgb);
+      if (matches.isNotEmpty) {
+        final tile = ColorCatalog.tileForArgb(matches.first.colorArgb);
+        if (tile.id != player.colorId) {
+          profileColor = Color(tile.backgroundArgb);
+        }
+      }
     }
     final pillColor = profileColor ?? Colors.white.withValues(alpha: 0.22);
 
@@ -150,7 +157,8 @@ class GameSetupScreen extends ConsumerWidget {
                       player.alias ?? '+ @alias',
                       style: TextStyle(
                           color: profileColor == null
-                              ? fg.withValues(alpha: 0.8)
+                              ? fg.withValues(
+                                  alpha: player.alias == null ? 0.8 : 1)
                               : (ThemeData.estimateBrightnessForColor(
                                           profileColor) ==
                                       Brightness.dark
@@ -279,8 +287,18 @@ class GameSetupScreen extends ConsumerWidget {
       return;
     }
     final normalized = result.startsWith('@') ? result : '@$result';
-    await notifier.setPlayerAlias(player.id, normalized);
-    ref.read(aliasProfilesProvider.notifier).register(normalized);
+    final profiles = ref.read(aliasProfilesProvider.notifier);
+    // Alias connu dont le profil a « Appliquer à ma tuile » : la tuile prend
+    // la couleur du profil au lieu de la couleur tirée au hasard. Alias
+    // nouveau : c'est l'inverse, le profil adopte la couleur actuelle de la
+    // tuile (affichée sur la pastille de l'alias).
+    await notifier.setPlayerAlias(player.id, normalized,
+        preferredColorId: profiles.tileColorIdFor(normalized));
+    if (profiles.profileOf(normalized) == null) {
+      final tile = ColorCatalog.byId(player.colorId);
+      profiles.register(normalized,
+          color: tile == null ? null : Color(tile.backgroundArgb));
+    }
   }
 
   void _snack(BuildContext context, String message) {

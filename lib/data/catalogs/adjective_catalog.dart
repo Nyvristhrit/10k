@@ -93,46 +93,24 @@ class AdjectiveCatalog {
     'Nostalgique',
   ];
 
-  /// Épithètes du mode trash : mordantes, moqueuses, un ton bien plus rentre-
-  /// dedans — mais jamais de haine réelle (pas de cible sur un groupe de
-  /// personnes). Complétables librement dans les réglages via l'éditeur.
+  /// Épithètes du mode trash **proposées par défaut** : moqueuses, du
+  /// chambrage de comptoir — mais sans grossièretés ni insultes visant un
+  /// groupe de personnes, pour rester dans les clous du Play Store (v1.6.1,
+  /// voir DECISIONS F-006). La table peut les retirer, ajouter les siennes
+  /// (y compris bien plus salées) ou revenir à cette liste depuis les
+  /// réglages : seule la liste de la table est utilisée pour tirer les noms
+  /// (`SettingsRepository.loadTrashAdjectives`). Volontairement courte (une
+  /// dizaine) : qui veut repartir de zéro la vide en quelques tapes.
   static const List<String> trash = [
-    'Bâtard·e',
-    'Enculé·e',
-    'Fils de flic',
-    'Connard·e',
-    'Trou du cul',
-    'Tête de con',
-    'Gros con',
-    'Abruti·e',
-    'Crétin·e fini·e',
-    'Débile profond·e',
-    'Pauvre merde',
-    'Sous-merde',
-    'Merdeux·se',
-    'Grosse merde',
-    'Salopard·e',
-    'Salaud·e',
-    'Ordure',
-    'Raclure',
-    'Relou',
-    'Enflure',
-    'Enfoiré·e',
-    'Crevard·e',
-    'Mange-merde',
-    'Fumier·ère',
-    'Pourriture',
-    'Déchet',
-    'Sac à merde',
-    'Trouduc',
-    'Tête de bite',
-    'Couille molle',
+    'Loser',
+    'Nullos',
     'Gland',
-    'Bouffon·ne',
-    'Pignouf·e',
-    'Péquenot·te',
     'Tocard·e',
-    'Crapule',
-    'Pouilleux·se',
+    'Boulet',
+    'Bouffon·ne',
+    'Baltringue',
+    'Gros naze',
+    'Tête à claques',
+    'Tête de nœud',
   ];
 }

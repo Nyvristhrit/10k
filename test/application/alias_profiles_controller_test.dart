@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart' show Color;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tenk/application/providers/app_providers.dart';
@@ -37,6 +38,25 @@ void main() {
     // Un deuxième enregistrement du même alias ne duplique pas l'entrée.
     notifier.register('@Ben');
     expect(container.read(aliasProfilesProvider), hasLength(1));
+  });
+
+  test(
+      'la couleur ne s\'impose à la tuile que si « Appliquer à ma tuile » '
+      'est coché, et ce choix est mémorisé', () {
+    final notifier = container.read(aliasProfilesProvider.notifier);
+    notifier.register('@Ben', color: const Color(0xFF7C3AED)); // purple
+    expect(notifier.tileColorIdFor('@Ben'), isNull,
+        reason: 'désactivé par défaut');
+
+    notifier.setColor('@Ben', const Color(0xFF7C3AED), applyToTile: true);
+    expect(notifier.tileColorIdFor('@Ben'), 'purple');
+    expect(SettingsRepository(dir).loadAliasProfiles().single.applyToTile,
+        isTrue);
+
+    // Changer la couleur sans préciser l'option la conserve.
+    notifier.setColor('@Ben', const Color(0xFF059669));
+    expect(notifier.tileColorIdFor('@Ben'), 'forest');
+    expect(notifier.tileColorIdFor('@Inconnu'), isNull);
   });
 
   test('rename met à jour le registre ET les parties déjà terminées',

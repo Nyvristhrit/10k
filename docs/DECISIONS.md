@@ -83,6 +83,43 @@
 - **Choix par défaut :** **ordre autour de la table** (`seatIndex` croissant).
 - **Raison :** non spécifié (spec §20.7) ; ordre de table = critère stable et neutre.
 
+### F-006 · Épithètes du mode trash : liste par défaut adoucie, entièrement modifiable (2026-10-02)
+- **Contexte :** publication prévue sur le Google Play Store. La liste trash d'origine était
+  faite d'insultes grossières (dont certaines à connotation homophobe), figées dans le code ;
+  la table ne pouvait qu'ajouter 20 épithètes perso à côté. Le mode trash a beau être caché
+  (easter egg), Google demande que le questionnaire de classification (IARC) décrive **tout**
+  le contenu accessible dans l'appli — un contenu caché non déclaré est un motif de retrait.
+- **Choix :** (1) liste par défaut (`AdjectiveCatalog.trash`) remplacée par du chambrage sans
+  grossièretés (« Boulet », « Tocard·e », « Pied nickelé »…) ; (2) la **liste complète** est
+  désormais mémorisée sur l'appareil (`settings.json`, clé `trashAdjectives`) et modifiable
+  dans les réglages : retirer n'importe quelle épithète (y compris par défaut), en ajouter
+  (100 max), revenir à la liste d'origine. Le moteur pioche uniquement dans cette liste
+  (`AddPlayer.trashAdjectives`) ; liste vide → le nom se limite à l'espèce. Plus de « poids
+  double » des épithètes perso (inutile maintenant qu'elles ne sont plus noyées dans un
+  catalogue figé).
+- **Reprise :** une installation ≤ 1.6.0 n'a que `customTrashAdjectives` (ajouts perso) : au
+  premier chargement, ces ajouts sont conservés à la suite de la nouvelle liste par défaut.
+  Les anciennes épithètes grossières ne sont plus dans l'appli (ni dans l'APK) ; qui les veut
+  les retape dans les réglages — elles restent alors uniquement sur son téléphone.
+- **Les piques (`trash_taunts.dart`) n'ont pas été modifiées :** elles chambrent la façon de
+  jouer, sans grossièreté ni cible sur un groupe — compatibles avec un classement « humour
+  grossier / langage modéré ».
+
+### F-007 · Alias → la tuile prend la couleur du profil (2026-10-02)
+- **Demande de Ben :** un ami déteste la couleur tirée au hasard ; avec son alias, il veut
+  retrouver sa couleur à chaque partie.
+- **Choix :** le nuancier des profils (« Alias & profils ») propose désormais les 12 couleurs
+  de **tuile** (`ColorCatalog.all`) au lieu de l'ancienne palette d'accent. Chaque profil a
+  une option **« Appliquer à ma tuile »** (`AliasProfile.applyToTile`, **désactivée par
+  défaut** : Ben aime que les couleurs changent d'une partie à l'autre, seule la pastille
+  `@alias` est alors à la couleur du profil). Quand elle est cochée, donner cet alias à un
+  joueur en préparation lui applique la couleur du profil
+  (`SetPlayerAlias.preferredColorId`) ; si un autre joueur l'avait déjà, **les deux
+  échangent** (les couleurs restent uniques à la table). Un alias tout neuf fait l'inverse :
+  le profil adopte la couleur actuelle de la tuile. Deux alias de la même table qui veulent
+  la même couleur : le dernier assigné l'emporte. Les profils créés avant (couleurs d'accent)
+  sont ramenés à la tuile équivalente (`ColorCatalog.tileForArgb`).
+
 ---
 
 ## Décisions d'architecture

@@ -177,11 +177,15 @@ class _InfoScreenState extends ConsumerState<InfoScreen> {
           title: 'Le sombrero malgache',
           text:
               'Au 1ᵉʳ lancer seulement. Si tu as deux paires (ex. deux 3 et '
-              'deux 5) + un dé à part, tu peux l\'annoncer à la table et '
-              'relancer ce dé isolé. S\'il retombe sur l\'une des deux valeurs, '
-              'tu gagnes la somme des deux en centaines (deux 5 + deux 3 → '
-              '500 + 300 = 800). Le nom est libre : baptise-le comme tu veux ! '
-              'C\'est une main pleine → tu rejoues tous les dés.',
+              'deux 5) + un dé à part, tu peux relancer ce dé isolé. S\'il '
+              'retombe sur l\'une des deux valeurs, tu gagnes la somme des deux '
+              'en centaines (deux 5 + deux 3 → 500 + 300 = 800). '
+              'C\'est une main pleine → tu rejoues tous les dés.\n'
+              '⚠️ Il faut l\'annoncer haut et fort AVANT de relancer : toute la '
+              'table doit savoir qu\'un sombrero malgache est en cours. Pas '
+              'd\'annonce = pas de sombrero, même s\'il tombe. On ne le joue '
+              'pas dans son coin !\n'
+              'Le nom est libre : baptise-le comme tu veux !',
         ),
       ];
 

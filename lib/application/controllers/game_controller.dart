@@ -64,12 +64,14 @@ class GameController extends AsyncNotifier<GameState?> {
   // Raccourcis de préparation.
   Future<EngineResult> addPlayer() => dispatch(AddPlayer(
         trashNames: ref.read(trashModeProvider),
-        customTrashAdjectives: ref.read(customTrashAdjectivesProvider),
+        trashAdjectives: ref.read(trashAdjectivesProvider),
       ));
   Future<EngineResult> renamePlayer(String id, String name) =>
       dispatch(RenamePlayer(playerId: id, newName: name));
-  Future<EngineResult> setPlayerAlias(String id, String? alias) =>
-      dispatch(SetPlayerAlias(playerId: id, alias: alias));
+  Future<EngineResult> setPlayerAlias(String id, String? alias,
+          {String? preferredColorId}) =>
+      dispatch(SetPlayerAlias(
+          playerId: id, alias: alias, preferredColorId: preferredColorId));
   Future<EngineResult> removePlayer(String id) =>
       dispatch(RemovePlayerBeforeStart(playerId: id));
   Future<EngineResult> updateRules(GameRules rules) =>

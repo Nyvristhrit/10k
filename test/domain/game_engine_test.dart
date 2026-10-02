@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tenk/data/catalogs/adjective_catalog.dart';
 import 'package:tenk/data/catalogs/animal_catalog.dart';
+import 'package:tenk/data/catalogs/color_catalog.dart';
 import 'package:tenk/domain/commands/game_command.dart';
 import 'package:tenk/domain/enums/game_enums.dart';
 import 'package:tenk/domain/errors/game_rule_violation.dart';
@@ -139,44 +140,25 @@ void main() {
           reason: '« $adjective » devrait être une épithète trash');
     });
 
-    test('mode trash : les épithètes perso rejoignent le pool', () {
+    test('mode trash : pioche uniquement dans la liste de la table', () {
       final engine = makeEngine();
-      // Une nouvelle partie à chaque tirage (le cap de 12 joueurs empêcherait
-      // d'accumuler assez d'essais dans une seule partie).
-      var found = false;
-      for (var i = 0; i < 300; i++) {
+      for (var i = 0; i < 20; i++) {
         final s = ok(engine.apply(engine.createGame(),
-            const AddPlayer(
-                trashNames: true, customTrashAdjectives: ['Aubergine'])));
-        if (s.players.single.displayName.endsWith('Aubergine')) {
-          found = true;
-          break;
-        }
+            const AddPlayer(trashNames: true, trashAdjectives: ['Aubergine'])));
+        expect(s.players.single.displayName.endsWith(' Aubergine'), true,
+            reason: '« ${s.players.single.displayName} »');
       }
-      expect(found, true,
-          reason: 'L\'épithète perso devrait finir par sortir du tirage');
     });
 
-    test('les épithètes perso comptent double dans le tirage', () {
-      // Le poids double est obtenu en dupliquant l'épithète perso dans le
-      // pool : deux positions distinctes doivent donc y mener toutes les
-      // deux, ce qui est exactement le mécanisme qui double sa probabilité
-      // face au catalogue de base.
-      const custom = ['Aubergine'];
-      final firstCopy = AdjectiveCatalog.trash.length;
-      final secondCopy = AdjectiveCatalog.trash.length + custom.length;
-
-      for (final index in [firstCopy, secondCopy]) {
-        final engine = GameEngine(
-          idGenerator: () => 'id',
-          clock: () => DateTime(2026, 1, 1),
-          random: _FixedRandom(index),
-        );
-        final s = ok(engine.apply(engine.createGame(),
-            const AddPlayer(trashNames: true, customTrashAdjectives: custom)));
-        expect(s.players.single.displayName.endsWith('Aubergine'), true,
-            reason: 'index $index du pool devrait pointer sur l\'épithète perso');
-      }
+    test("mode trash : liste vidée → le nom se limite à l'espèce", () {
+      final engine = makeEngine();
+      final s = ok(engine.apply(engine.createGame(),
+          const AddPlayer(trashNames: true, trashAdjectives: [])));
+      final player = s.players.single;
+      final avatar = AnimalCatalog.byId(player.avatarId)!;
+      final especes =
+          avatar.species.isEmpty ? [avatar.defaultFrenchName] : avatar.species;
+      expect(especes, contains(player.displayName));
     });
 
     test(
@@ -258,6 +240,39 @@ void main() {
 
       s = ok(e.apply(s, SetPlayerAlias(playerId: id, alias: '')));
       expect(playerOf(s, id).alias, isNull);
+    });
+
+    test(
+        'alias : la tuile prend la couleur du profil, échangée avec celui '
+        'qui l\'avait (demandé par Ben, 2026-10-02)', () {
+      final e = makeEngine();
+      var s = e.createGame();
+      s = ok(e.apply(s, const AddPlayer()));
+      s = ok(e.apply(s, const AddPlayer()));
+      final a = s.players[0];
+      final b = s.players[1];
+
+      // A veut la couleur que B a tirée : ils échangent.
+      s = ok(e.apply(s,
+          SetPlayerAlias(playerId: a.id, alias: 'Ami', preferredColorId: b.colorId)));
+      expect(playerOf(s, a.id).colorId, b.colorId);
+      expect(playerOf(s, b.id).colorId, a.colorId);
+
+      // Une couleur libre : seul A change.
+      final free = ColorCatalog.all
+          .map((c) => c.id)
+          .firstWhere((id) => !s.players.any((p) => p.colorId == id));
+      s = ok(e.apply(s,
+          SetPlayerAlias(playerId: a.id, alias: 'Ami', preferredColorId: free)));
+      expect(playerOf(s, a.id).colorId, free);
+      expect(playerOf(s, b.id).colorId, a.colorId);
+
+      // Sans couleur de profil (ou id inconnu), personne ne bouge.
+      final before = s.players.map((p) => p.colorId).toList();
+      s = ok(e.apply(s, SetPlayerAlias(playerId: b.id, alias: 'Autre')));
+      s = ok(e.apply(s,
+          SetPlayerAlias(playerId: b.id, alias: 'Autre', preferredColorId: '??')));
+      expect(s.players.map((p) => p.colorId).toList(), before);
     });
 
     test('alias : verrouillé après démarrage', () {

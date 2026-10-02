@@ -13,13 +13,15 @@ import '../../domain/services/trash_targets.dart';
 import '../../shared/trash/trash_taunts.dart';
 import '../../shared/widgets/player_visuals.dart';
 import '../game_board/encounter_alert.dart';
-import '../game_board/game_actions.dart';
 
 /// Palette de la saisie de score.
 const Color _addGreen = Color(0xFF10B981); // vert émeraude des gros boutons «+»
 const Color _validateGreen = Color(0xFF0E9E6E); // vert du bouton Valider
 const Color _subtractRed = Color(0xFFE11D48); // rouge des petits «−»
 const Color _offWhite = Color(0xFFF3FBF7); // blanc cassé du texte des boutons
+
+/// Espace entre deux gros boutons «+N».
+const double _kRowGap = 12;
 
 /// Ouvre la fenêtre centrée de saisie du score d'un joueur (§10).
 ///
@@ -33,7 +35,7 @@ Future<void> showScoreEntrySheet(
 }) {
   return showDialog<void>(
     context: context,
-    barrierColor: Colors.black.withValues(alpha: 0.72),
+    barrierColor: Colors.black.withValues(alpha: 0.86),
     builder: (_) => _ScoreEntryDialog(player: player, rules: rules),
   );
 }
@@ -184,15 +186,33 @@ class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
     // Coupures affichées : la plus grosse en haut pour taper vite.
     final steps = <int>[1000, 500, 100, if (rules.scoreStep == 50) 50];
 
+    // Hauteur des gros boutons «+N» : ils se partagent la place laissée par
+    // le reste de la fenêtre (en-tête, compteur, Effacer/Valider ≈ 330 px),
+    // pour être aussi gros que l'écran le permet — avec un plancher (petits
+    // écrans, paysage : la fenêtre défile) et un plafond (tablettes).
+    final maxHeight = MediaQuery.of(context).size.height * 0.9;
+    final rowHeight =
+        ((maxHeight - 330) / steps.length - _kRowGap).clamp(84.0, 150.0);
+
     return Dialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
-      backgroundColor: scheme.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 460,
-          maxHeight: MediaQuery.of(context).size.height * 0.9,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      child: Container(
+        // Halo aux couleurs du joueur, comme celui de la tuile active du
+        // plateau : détache la fenêtre du fond (lui-même bien assombri).
+        decoration: BoxDecoration(
+          color: scheme.surface,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+                color: accent.withValues(alpha: 0.60),
+                blurRadius: 46,
+                spreadRadius: 3),
+          ],
         ),
+        clipBehavior: Clip.antiAlias,
+        constraints: BoxConstraints(maxWidth: 460, maxHeight: maxHeight),
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
           child: Column(
@@ -234,10 +254,11 @@ class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
               for (final step in steps) ...[
                 _StepRow(
                   amount: step,
+                  height: rowHeight,
                   onAdd: () => _add(step),
                   onSubtract: _amount >= step ? () => _add(-step) : null,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: _kRowGap),
               ],
               if (_message != null) ...[
                 const SizedBox(height: 4),
@@ -252,14 +273,14 @@ class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
                   Expanded(
                     child: OutlinedButton(
                       style: OutlinedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(58),
+                          minimumSize: const Size.fromHeight(72),
                           foregroundColor: scheme.onSurfaceVariant,
                           side: BorderSide(
                               color: scheme.outline.withValues(alpha: 0.5))),
                       onPressed: _amount == 0 ? null : _clear,
                       child: const Text('Effacer',
                           style: TextStyle(
-                              fontSize: 17, fontWeight: FontWeight.w700)),
+                              fontSize: 18, fontWeight: FontWeight.w700)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -273,29 +294,15 @@ class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
                             _validateGreen.withValues(alpha: 0.30),
                         disabledForegroundColor:
                             _offWhite.withValues(alpha: 0.55),
-                        minimumSize: const Size.fromHeight(58),
+                        minimumSize: const Size.fromHeight(72),
                       ),
                       onPressed: _canValidate && !_busy ? _validate : null,
                       child: Text(_amount > 0 ? 'Valider +$_amount' : 'Valider',
                           style: const TextStyle(
-                              fontSize: 19, fontWeight: FontWeight.w900)),
+                              fontSize: 22, fontWeight: FontWeight.w900)),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 4),
-              TextButton.icon(
-                onPressed: _busy
-                    ? null
-                    : () async {
-                        final navigator = Navigator.of(context);
-                        await handlePass(context, ref, player);
-                        if (mounted) navigator.pop();
-                      },
-                style:
-                    TextButton.styleFrom(foregroundColor: scheme.onSurfaceVariant),
-                icon: const Icon(Icons.block, size: 18),
-                label: Text('Passer le tour de ${player.displayName}'),
               ),
             ],
           ),
@@ -310,19 +317,24 @@ class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
 class _StepRow extends StatelessWidget {
   const _StepRow({
     required this.amount,
+    required this.height,
     required this.onAdd,
     required this.onSubtract,
   });
 
   final int amount;
+  final double height;
   final VoidCallback onAdd;
   final VoidCallback? onSubtract;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 84,
+      height: height,
       child: Row(
+        // Les boutons occupent toute la hauteur de la ligne (sinon ils
+        // restent à leur taille par défaut, centrés dans la ligne).
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Expanded(
             flex: 2,
@@ -338,7 +350,7 @@ class _StepRow extends StatelessWidget {
               ),
               onPressed: onSubtract,
               child: const Text('−',
-                  style: TextStyle(fontSize: 34, fontWeight: FontWeight.w900)),
+                  style: TextStyle(fontSize: 46, fontWeight: FontWeight.w900)),
             ),
           ),
           const SizedBox(width: 8),
@@ -354,7 +366,7 @@ class _StepRow extends StatelessWidget {
               onPressed: onAdd,
               child: Text('+$amount',
                   style: const TextStyle(
-                      fontSize: 34, fontWeight: FontWeight.w900)),
+                      fontSize: 50, fontWeight: FontWeight.w900)),
             ),
           ),
         ],

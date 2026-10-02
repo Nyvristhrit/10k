@@ -38,8 +38,26 @@ flutter test                          # suite de tests (moteur + widgets)
 flutter analyze
 flutter build apk --debug             # build rapide, pour vérifier que ça compile
 flutter build apk --release           # build à installer sur le Pixel
-flutter install -d 37071FDJG005AE     # installe sur le Pixel de Ben
+adb -s 37071FDJG005AE install -r build/app/outputs/flutter-apk/app-release.apk
+                                      # met à jour sur le Pixel de Ben EN GARDANT ses données
 ```
+
+⚠️ **Préférer `adb install -r` à `flutter install`** pour le téléphone de
+Ben : `flutter install` annonce « Uninstalling old version… » (risque
+d'effacer parties, alias et réglages — le 2026-10-02 les données ont
+pourtant survécu, mais ne pas compter dessus). `adb install -r` remplace
+l'appli en conservant ses données.
+
+**Lire/modifier les données de l'appli sur le Pixel** (parties
+`app_flutter/games/*.json`, réglages `app_flutter/settings.json`) : la
+version release n'est pas « debuggable », donc `run-as` refuse. Debug et
+release sont signées avec la même clé (debug) : `adb install -r` de
+`app-debug.apk` (données conservées) → `adb shell run-as com.bquillere.tenk …`
+→ réinstaller `app-release.apk` avec `-r`. **Dans Git Bash, toujours
+`export MSYS_NO_PATHCONV=1`** avant des commandes adb avec des chemins
+Android (`/data/local/tmp/…`), sinon Git Bash les réécrit en chemins Windows
+— le 2026-10-02 ça a vidé `settings.json` (`cat absent > settings.json`),
+restauré depuis une copie. Toujours copier le fichier avant d'y écrire.
 
 ## Distribution (GitHub)
 

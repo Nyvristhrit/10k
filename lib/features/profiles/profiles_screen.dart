@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../app/theme/app_theme.dart';
 import '../../application/providers/app_providers.dart';
+import '../../data/catalogs/color_catalog.dart';
 import '../../domain/models/alias_profile.dart';
 import '../../domain/services/game_stats.dart';
 import '../../shared/widgets/app_background.dart';
@@ -84,7 +84,8 @@ class _ProfileCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final color = Color(profile.colorArgb);
+    final color =
+        Color(ColorCatalog.tileForArgb(profile.colorArgb).backgroundArgb);
     final onColor =
         ThemeData.estimateBrightnessForColor(color) == Brightness.dark
             ? Colors.white
@@ -158,7 +159,9 @@ class _ProfileEditorDialog extends ConsumerStatefulWidget {
 class _ProfileEditorDialogState extends ConsumerState<_ProfileEditorDialog> {
   late final _controller =
       TextEditingController(text: widget.profile.alias.replaceFirst('@', ''));
-  late Color _color = Color(widget.profile.colorArgb);
+  late Color _color = Color(
+      ColorCatalog.tileForArgb(widget.profile.colorArgb).backgroundArgb);
+  late bool _applyToTile = widget.profile.applyToTile;
 
   @override
   void dispose() {
@@ -174,7 +177,8 @@ class _ProfileEditorDialogState extends ConsumerState<_ProfileEditorDialog> {
       await notifier.rename(widget.profile.alias, newName);
     }
     notifier.setColor(
-        newName.isEmpty ? widget.profile.alias : '@$newName', _color);
+        newName.isEmpty ? widget.profile.alias : '@$newName', _color,
+        applyToTile: _applyToTile);
     navigator.pop();
   }
 
@@ -209,6 +213,11 @@ class _ProfileEditorDialogState extends ConsumerState<_ProfileEditorDialog> {
               selected: _color,
               onSelected: (c) => setState(() => _color = c),
             ),
+            const SizedBox(height: 8),
+            _ApplyToTileSwitch(
+              value: _applyToTile,
+              onChanged: (v) => setState(() => _applyToTile = v),
+            ),
           ],
         ),
       ),
@@ -230,8 +239,37 @@ class _ProfileEditorDialogState extends ConsumerState<_ProfileEditorDialog> {
   }
 }
 
-/// Une ligne de pastilles de couleur à choisir (palette d'accent de
-/// l'appli), avec une coche sur celle sélectionnée.
+/// Option « Appliquer à ma tuile » d'un profil : la tuile du joueur prend la
+/// couleur du profil à chaque partie, au lieu d'une couleur au hasard (voir
+/// DECISIONS F-007). Désactivée, seule la pastille de l'alias est colorée.
+class _ApplyToTileSwitch extends StatelessWidget {
+  const _ApplyToTileSwitch({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      value: value,
+      onChanged: onChanged,
+      title: const Text('Appliquer à ma tuile',
+          style: TextStyle(fontWeight: FontWeight.w700)),
+      subtitle: Text(
+          value
+              ? 'Ta tuile prend cette couleur à chaque partie.'
+              : 'Couleur de tuile au hasard ; seule ta pastille @alias '
+                  'est à ta couleur.',
+          style: const TextStyle(fontSize: 12)),
+    );
+  }
+}
+
+/// Une ligne de pastilles de couleur à choisir — les couleurs de tuile
+/// elles-mêmes, puisque c'est celle que prend la tuile d'un joueur quand le
+/// profil a « Appliquer à ma tuile » —, avec une coche sur celle
+/// sélectionnée.
 class _ColorSwatchPicker extends StatelessWidget {
   const _ColorSwatchPicker({required this.selected, required this.onSelected});
 
@@ -244,14 +282,20 @@ class _ColorSwatchPicker extends StatelessWidget {
       spacing: 10,
       runSpacing: 10,
       children: [
-        for (final seed in AppTheme.accentSeeds)
+        for (final seed in [
+          for (final tile in ColorCatalog.all) Color(tile.backgroundArgb)
+        ])
           GestureDetector(
             onTap: () => onSelected(seed),
             child: CircleAvatar(
               radius: 18,
               backgroundColor: seed,
               child: selected.toARGB32() == seed.toARGB32()
-                  ? const Icon(Icons.check, color: Colors.white)
+                  ? Icon(Icons.check,
+                      color: ThemeData.estimateBrightnessForColor(seed) ==
+                              Brightness.dark
+                          ? Colors.white
+                          : Colors.black)
                   : null,
             ),
           ),
@@ -272,7 +316,8 @@ class _CreateAliasDialog extends ConsumerStatefulWidget {
 
 class _CreateAliasDialogState extends ConsumerState<_CreateAliasDialog> {
   final _controller = TextEditingController();
-  Color _color = AppTheme.accentSeeds.first;
+  Color _color = Color(ColorCatalog.all.first.backgroundArgb);
+  bool _applyToTile = false;
 
   @override
   void dispose() {
@@ -286,7 +331,7 @@ class _CreateAliasDialogState extends ConsumerState<_CreateAliasDialog> {
     final alias = '@$name';
     ref.read(aliasProfilesProvider.notifier)
       ..register(alias)
-      ..setColor(alias, _color);
+      ..setColor(alias, _color, applyToTile: _applyToTile);
     Navigator.pop(context);
   }
 
@@ -318,6 +363,11 @@ class _CreateAliasDialogState extends ConsumerState<_CreateAliasDialog> {
             _ColorSwatchPicker(
               selected: _color,
               onSelected: (c) => setState(() => _color = c),
+            ),
+            const SizedBox(height: 8),
+            _ApplyToTileSwitch(
+              value: _applyToTile,
+              onChanged: (v) => setState(() => _applyToTile = v),
             ),
           ],
         ),

@@ -9,11 +9,11 @@ import '../../domain/models/game_state.dart';
 import '../../domain/repositories/game_repository.dart';
 import '../../domain/services/game_engine.dart';
 import '../controllers/alias_profiles_controller.dart';
-import '../controllers/custom_adjectives_controller.dart';
 import '../controllers/dice_tray_controller.dart';
 import '../controllers/game_controller.dart';
 import '../controllers/keep_screen_on_controller.dart';
 import '../controllers/theme_controller.dart';
+import '../controllers/trash_adjectives_controller.dart';
 import '../controllers/trash_controller.dart';
 
 /// Dépôt de persistance. Surchargé dans `main()` avec l'implémentation fichier
@@ -38,11 +38,11 @@ final themeModeProvider =
 final trashModeProvider =
     NotifierProvider<TrashModeController, bool>(TrashModeController.new);
 
-/// Épithètes trash ajoutées par la table (réglages), en plus du catalogue de
-/// base — pour glisser des blagues ou des références perso dans les noms tirés.
-final customTrashAdjectivesProvider =
-    NotifierProvider<CustomAdjectivesController, List<String>>(
-        CustomAdjectivesController.new);
+/// Liste complète des épithètes du mode trash, modifiable par la table dans
+/// les réglages — c'est là que le mode trash pioche les noms tirés.
+final trashAdjectivesProvider =
+    NotifierProvider<TrashAdjectivesController, List<String>>(
+        TrashAdjectivesController.new);
 
 /// Réglage « garder l'écran allumé pendant la partie » (mémorisé, défaut oui).
 final keepScreenOnEnabledProvider =

@@ -10,6 +10,49 @@
 > techniques justifiés), `docs/BACKLOG.md` (reste à faire) et
 > `docs/SPECIFICATION.md` (règles du jeu détaillées).
 
+## [v1.6.1] — 2026-10-02
+
+> Pas d'entrée « Quoi de neuf » ni sur la page de téléchargement : Ben juge
+> ces changements trop mineurs pour une 1.7 (voir la procédure en fin de
+> fichier).
+
+### Ajouté
+- **Pages « Confidentialité » et « Mentions légales »** sur le site
+  (`docs/confidentialite.html`, `docs/mentions-legales.html`), liées en pied
+  de la page de téléchargement — prérequis du Play Store, et mentions
+  légales attendues pour un site en France (LCEN). Éditeur particulier
+  anonyme pour l'instant ; à compléter quand l'appli passera sous la société
+  de Ben (voir BACKLOG).
+- La police du site est désormais hébergée sur le site (`docs/fonts/`) au
+  lieu de Google Fonts : plus aucune adresse IP de visiteur envoyée à un
+  tiers.
+
+### Modifié
+- **Saisie du score : le bouton « Passer le tour de … » est retiré de la
+  fenêtre.** Il était trop près de « Valider » et on tapait parfois dessus
+  par erreur (signalé par Ben) ; le bouton « Passer » de l'écran de jeu
+  suffit. Les gros boutons +1000/+500/+100 se partagent désormais toute la
+  hauteur disponible (jusqu'à 150 px chacun, 84 px minimum — la fenêtre
+  défile sur petit écran) : ils ne remplissaient en fait pas leur ligne
+  (`Row` sans `CrossAxisAlignment.stretch`, boutons restés à ~43 px
+  centrés), repéré sur capture d'écran du Pixel. Effacer/Valider passent de
+  58 à 72 px.
+- **Fenêtre de saisie du score mieux détachée du fond** : halo aux couleurs
+  du joueur (comme la tuile active) et fond plus assombri derrière.
+- **Alias : option « Appliquer à ma tuile »** par profil (désactivée par
+  défaut) — la tuile prend alors la couleur du profil au lieu de la couleur
+  tirée au hasard (échange avec le joueur qui l'avait). Sinon, seule la
+  pastille de l'alias est à la couleur du profil. Le nuancier des profils
+  propose maintenant les vraies couleurs de tuile. Voir DECISIONS F-007.
+- **Mode trash : la liste des épithètes est entièrement modifiable** dans
+  les réglages (retirer, ajouter, rétablir la liste d'origine — 100 max), et
+  la liste par défaut a été adoucie (plus de grossièretés) et réduite à 10
+  épithètes (Loser, Nullos, Gland…) en vue du Play Store — courte pour qu'on
+  puisse la vider vite. Les ajouts perso existants sont conservés. Voir DECISIONS F-006.
+- **Règle du sombrero malgache** (écran Règles) : précise qu'il faut
+  l'annoncer à toute la table avant de relancer — pas d'annonce, pas de
+  sombrero.
+
 ## [v1.6.0] — 2026-09-16
 
 ### Corrigé
@@ -30,7 +73,7 @@
   (testée), ce n'était pas la source du problème.
 
 - **Épithètes de noms par défaut parfois dupliquées entre joueurs** (ex.
-  deux joueurs « … Facho ») alors que l'avatar/emoji, lui, ne peut déjà pas
+  deux joueurs « … Tocard ») alors que l'avatar/emoji, lui, ne peut déjà pas
   se répéter (`_drawAvatar`). `GameEngine._scoutName` exclut désormais les
   épithètes déjà utilisées à la table, avec repli sur le pool complet si
   toutes ont déjà servi (table nombreuse). Signalé par Ben.
@@ -295,7 +338,7 @@ pour le détail commit par commit :
    `package_info_plus`, voir commit du 4 sept. 2026). L'oublier désynchronise
    la version affichée dans l'appli du tag Git/de la Release GitHub — c'est
    arrivé une fois (resté à `1.0.0+1` jusqu'à la v1.3.1), à ne pas reproduire.
-1. `flutter build apk --release`, `flutter install -d <device-id>` pour tester
+1. `flutter build apk --release`, `adb -s <device-id> install -r build/app/outputs/flutter-apk/app-release.apk` pour tester
    sur le Pixel de Ben.
 2. Copier l'APK à la racine du dépôt : `cp build/app/outputs/flutter-apk/app-release.apk 10K.apk`
    (ce fichier est gitignoré — jamais commité, seulement diffusé via les

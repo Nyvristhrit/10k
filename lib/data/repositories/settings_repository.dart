@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import '../../domain/models/alias_profile.dart';
+import '../catalogs/adjective_catalog.dart';
 
 /// Réglages généraux de l'appli (hors règles de jeu), stockés dans un petit
 /// fichier JSON du dossier de documents : le thème (jour/nuit) et le mode trash.
@@ -58,17 +59,28 @@ class SettingsRepository {
   /// qu'on le désactive volontairement.
   void saveTrashMode(bool enabled) => _write('trashMode', enabled);
 
-  /// Épithètes trash ajoutées par la table (en plus du catalogue de base),
-  /// pour glisser des blagues ou des références perso dans les noms tirés.
-  List<String> loadCustomTrashAdjectives() {
-    final raw = _read()['customTrashAdjectives'];
-    if (raw is! List) return const [];
-    return raw.whereType<String>().toList();
+  /// Épithètes du mode trash utilisées pour tirer les noms — **la liste
+  /// complète**, entièrement modifiable par la table dans les réglages
+  /// (depuis la v1.6.1 ; voir DECISIONS F-006).
+  ///
+  /// Tant que la table n'y a pas touché : la liste par défaut
+  /// ([AdjectiveCatalog.trash]). Reprise des versions ≤ 1.6.0, qui ne
+  /// mémorisaient que les ajouts perso (`customTrashAdjectives`) en plus d'un
+  /// catalogue figé : ces ajouts sont conservés, à la suite de la liste par
+  /// défaut.
+  List<String> loadTrashAdjectives() {
+    final data = _read();
+    final raw = data['trashAdjectives'];
+    if (raw is List) return raw.whereType<String>().toList();
+    final legacy = data['customTrashAdjectives'];
+    final custom =
+        legacy is List ? legacy.whereType<String>() : const <String>[];
+    return {...AdjectiveCatalog.trash, ...custom}.toList();
   }
 
-  /// Mémorise la liste d'épithètes trash perso.
-  void saveCustomTrashAdjectives(List<String> adjectives) =>
-      _write('customTrashAdjectives', adjectives);
+  /// Mémorise la liste complète d'épithètes trash.
+  void saveTrashAdjectives(List<String> adjectives) =>
+      _write('trashAdjectives', adjectives);
 
   /// L'écran doit-il rester allumé pendant une partie (défaut : oui) ? Réglage
   /// général, indépendant d'une partie — désactivable pour l'économie de

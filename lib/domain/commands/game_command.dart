@@ -1,3 +1,4 @@
+import '../../data/catalogs/adjective_catalog.dart';
 import '../enums/game_enums.dart';
 import '../models/game_rules.dart';
 
@@ -22,7 +23,7 @@ class AddPlayer extends GameCommand {
   const AddPlayer({
     this.displayName,
     this.trashNames = false,
-    this.customTrashAdjectives = const [],
+    this.trashAdjectives = AdjectiveCatalog.trash,
   });
 
   /// Nom personnalisé facultatif ; sinon un nom « espèce + épithète » tiré au
@@ -32,9 +33,10 @@ class AddPlayer extends GameCommand {
   /// Pioche l'épithète dans le pool trash plutôt que le pool sage.
   final bool trashNames;
 
-  /// Épithètes trash ajoutées par la table (réglages), piochées en plus du
-  /// catalogue de base quand [trashNames] est vrai.
-  final List<String> customTrashAdjectives;
+  /// Épithètes où piocher quand [trashNames] est vrai : la liste de la table
+  /// (réglages), la liste par défaut sinon. Vide : le nom se limite à
+  /// l'espèce.
+  final List<String> trashAdjectives;
 }
 
 /// Renomme un joueur avant le lancement.
@@ -47,9 +49,18 @@ class RenamePlayer extends GameCommand {
 /// Fixe (ou retire) l'alias de table d'un joueur avant le lancement (§ évolution
 /// « alias joueur pour des stats fiables »). `alias` à `null` (ou vide) le retire.
 class SetPlayerAlias extends GameCommand {
-  const SetPlayerAlias({required this.playerId, this.alias});
+  const SetPlayerAlias({
+    required this.playerId,
+    this.alias,
+    this.preferredColorId,
+  });
   final String playerId;
   final String? alias;
+
+  /// Couleur de tuile attachée au profil de cet alias (ex. `forest`), à
+  /// appliquer au joueur. Si un autre joueur l'a déjà, les deux échangent
+  /// leurs couleurs. `null` : le joueur garde la sienne.
+  final String? preferredColorId;
 }
 
 /// Supprime définitivement un joueur avant le lancement.

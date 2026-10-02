@@ -6,10 +6,16 @@
 <title>10K — Compagnon de jeu du 10 000</title>
 <meta name="description" content="Application Android 100% hors ligne qui remplace la feuille de score du jeu de dés 10 000.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
+  /* Police hébergée sur le site (même fichier que l'appli) plutôt que chez
+     Google Fonts : aucune adresse IP de visiteur n'est envoyée à un tiers
+     (voir confidentialite.html). Police variable, graisses 300 à 700. */
+  @font-face {
+    font-family: "Space Grotesk";
+    src: url("fonts/SpaceGrotesk.ttf") format("truetype");
+    font-weight: 300 700;
+    font-display: swap;
+  }
   :root {
     --bg-0: #0b0a0f;
     --bg-1: #141319;
@@ -375,7 +381,7 @@
         <text x="120" y="98" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="112" fill="url(#stripes)" stroke="url(#stripes)" stroke-width="5" stroke-linejoin="round" paint-order="stroke fill">10K</text>
       </svg>
       <p class="tagline">Compagnon de jeu du 10 000 — 100&nbsp;% hors ligne</p>
-      <span class="version-pill"><span class="dot"></span> Version actuelle : v1.6.0</span>
+      <span class="version-pill"><span class="dot"></span> Version actuelle : v1.6.1</span>
     </header>
 
     <div class="cta">
@@ -436,7 +442,7 @@
             <li>Une rencontre redonne désormais toujours 3 vies à la victime, même sans vider complètement sa pile.</li>
             <li>Les noms de joueur trop longs sont maintenant tronqués par « … » plutôt qu'affichés en tout petit.</li>
             <li>Le plateau de dés virtuel affiche bien 5 dés (au lieu de 6), et la couleur des points reste lisible quelle que soit la teinte tirée.</li>
-            <li>Les épithètes des noms par défaut (ex. « Facho », « Farceur ») ne se répètent plus entre deux joueurs de la même partie.</li>
+            <li>Les épithètes des noms par défaut (ex. « Tocard », « Farceur ») ne se répètent plus entre deux joueurs de la même partie.</li>
           </ul>
         </div>
         <div class="version">
@@ -495,6 +501,9 @@
     <footer>
       Imaginé par Ben, vibecodé avec Claude · Licence MIT ·
       <a href="https://github.com/Nyvristhrit/10k">github.com/Nyvristhrit/10k</a>
+      <br>
+      <a href="confidentialite.html">Confidentialité</a> ·
+      <a href="mentions-legales.html">Mentions légales</a>
     </footer>
   </div>
 </body>
