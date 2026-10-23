@@ -7,10 +7,12 @@ import 'package:flutter/material.dart';
 /// tuile ou d'une fenêtre : les taches repeignent le fond, le texte reste
 /// lisible par-dessus (et les taps passent au travers).
 ///
-/// Un seul marron, opaque : deux taches qui se chevauchent donnent le même
-/// marron uni, sans teintes empilées. Les taches grossissent au fil de la
-/// partie, si bien que la tuile du dernier finit presque entièrement marron,
-/// constellée de gouttelettes — la saleté de tous les derniers successifs.
+/// Plusieurs nuances de marron, plus ou moins opaques : là où les taches se
+/// chevauchent, les teintes se mêlent et foncent — à la longue, un camouflage
+/// marron façon patchwork (choix de Ben, après un essai en marron unique
+/// jugé trop plat). Les taches grossissent au fil de la partie, si bien que
+/// la tuile du dernier finit presque entièrement recouverte, constellée de
+/// gouttelettes — la saleté de tous les derniers successifs.
 ///
 /// Chaque tache a une forme et une place fixes (tirées d'après son numéro) :
 /// elles ne bougent pas d'un affichage à l'autre, et quand le titre passe à
@@ -25,8 +27,15 @@ class CradoStains extends StatefulWidget {
 
   static const int maxVisible = 60;
 
-  /// Le marron, unique.
-  static const Color brown = Color(0xFF5A3A1C);
+  /// Les nuances du camouflage, du plus foncé au plus clair (une touche
+  /// d'olive pour le côté treillis).
+  static const List<Color> browns = [
+    Color(0xFF3B2210),
+    Color(0xFF5A3A1C),
+    Color(0xFF6F4A26),
+    Color(0xFF85602F),
+    Color(0xFF5E5024),
+  ];
 
   @override
   State<CradoStains> createState() => _CradoStainsState();
@@ -115,7 +124,10 @@ class _StainsPainter extends CustomPainter {
   /// Une éclaboussure : un pâté aux bords irréguliers, dont quelques pointes
   /// partent en coulures, et des gouttes détachées projetées autour.
   void _splat(Canvas canvas, Random rnd, double r) {
-    final paint = Paint()..color = CradoStains.brown;
+    final shade =
+        CradoStains.browns[rnd.nextInt(CradoStains.browns.length)];
+    final paint = Paint()
+      ..color = shade.withValues(alpha: 0.75 + 0.22 * rnd.nextDouble());
 
     // Pâté central : contour bosselé, avec ici et là une pointe projetée.
     const points = 16;

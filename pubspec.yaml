@@ -40,7 +40,7 @@ dependencies:
   path_provider: ^2.1.6
   wakelock_plus: ^1.2.8
   package_info_plus: ^10.2.1
-  # Prouts du « Cradingue » (mode trash) : lecture de petits sons courts.
+  # Prouts du « bon dernier » (mode trash) : lecture de petits sons courts.
   audioplayers: ^6.8.1
 
 # La version 2.3.x de path_provider_android tire un paquet natif `jni` dont le
@@ -95,8 +95,8 @@ flutter:
         - asset: assets/fonts/SpaceGrotesk.ttf
 
   # To add assets to your application, add an assets section, like this:
-  # Prouts du « Cradingue » (mode trash), synthétisés par
-  # `test/tools/generate_fart_sounds.dart`.
+  # Prouts du « bon dernier » (mode trash) : extraits d'archives sonores de
+  # Yle (CC BY 4.0, crédités dans « À propos ») — voir DECISIONS A-013.
   assets:
     - assets/sounds/
 

@@ -221,8 +221,18 @@ class _InfoScreenState extends ConsumerState<InfoScreen> {
           emoji: '🚫',
           title: 'Passer / faire quitter',
           text:
-              'Le bouton « Passer » saute le tour. Un appui long sur une tuile '
-              'permet de faire quitter un joueur (il reste au classement).',
+              'Le bouton « Passer » saute le tour. Un appui long sur une tuile, '
+              'relâché sans bouger, permet de faire quitter un joueur (il '
+              'reste au classement).',
+        ),
+        const _Rule(
+          emoji: '🔀',
+          title: 'Changer un joueur de place',
+          text:
+              'Quelqu\'un change de place à table ? Appui long sur sa tuile, '
+              'puis glisse-la sur un autre joueur : il prend sa place, et le '
+              'tour suit le nouvel ordre. Celui qui est en train de jouer garde '
+              'la main.',
         ),
         const _Rule(
           emoji: '↩️',
@@ -290,6 +300,22 @@ class _InfoScreenState extends ConsumerState<InfoScreen> {
                       .onSurface
                       .withValues(alpha: 0.4),
                   fontSize: 12)),
+        ),
+        // Crédit exigé par la licence CC BY 4.0 des effets sonores (prouts du
+        // bon dernier, mode trash) : auteur, source, licence, modifications.
+        // Toujours affiché, mode trash ou non. Voir DECISIONS A-013.
+        const SizedBox(height: 6),
+        Center(
+          child: Text(
+              'Effets sonores : Yle Arkisto (freesound.org/s/425594), '
+              'licence CC BY 4.0 — extraits découpés et mis à niveau.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.4),
+                  fontSize: 11)),
         ),
       ];
 

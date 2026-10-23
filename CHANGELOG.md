@@ -10,6 +10,31 @@
 > techniques justifiés), `docs/BACKLOG.md` (reste à faire) et
 > `docs/SPECIFICATION.md` (règles du jeu détaillées).
 
+## [v1.7.0, mise à jour du jour] — 2026-10-23
+
+> Retours de Ben sur la v1.7.0, publiés **sans changer de numéro** (choix de
+> Ben) : l'APK `10K.apk` de la Release v1.7.0 a été remplacé
+> (`gh release upload --clobber`). Même `versionCode` (10) : la mise à jour
+> s'installe par-dessus, mais la fenêtre « Quoi de neuf » ne se rouvre pas.
+
+### Modifié
+- **Prouts du bon dernier : de vrais enregistrements.** Les sons
+  synthétisés de la v1.7.0 sonnaient « générés » et grinçants (une seconde
+  recette, souffle + clapet irrégulier, n'a pas convaincu non plus). Ils
+  sont remplacés par **8 vrais prouts** choisis à l'oreille par Ben dans les
+  archives sonores de Yle (CC BY 4.0), ~0,5 s chacun, en OGG (~70 Ko en
+  tout). Crédit ajouté en bas de « À propos ». Le générateur
+  (`test/tools/generate_fart_sounds.dart`) est supprimé. Voir DECISIONS
+  A-013.
+- **Taches du bon dernier : retour des nuances.** Le marron unique et
+  opaque de la v1.7.0 faisait trop plat : 5 nuances de marron (dont une
+  touche d'olive), opacité 75-97 %, qui foncent là où elles se chevauchent
+  — la tuile finit en camouflage marron façon patchwork. Toujours sous le
+  texte, toujours de plus en plus grosses.
+- **Règles, onglet « L'appli »** : nouvelle fiche « Changer un joueur de
+  place » (appui long + glisser), et « Passer / faire quitter » précise
+  qu'il faut relâcher sans bouger.
+
 ## [v1.7.0] — 2026-10-23
 
 ### Ajouté

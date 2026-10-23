@@ -2,9 +2,10 @@ import 'dart:math';
 
 import 'package:audioplayers/audioplayers.dart';
 
-/// Joue un prout bref, tiré au hasard parmi les sons synthétisés
-/// (`assets/sounds/prout_N.wav`, voir `test/tools/generate_fart_sounds.dart`)
-/// — jamais deux fois le même d'affilée.
+/// Joue un prout bref, tiré au hasard parmi de vrais enregistrements
+/// (`assets/sounds/prout_N.ogg` — archives sonores de Yle, CC BY 4.0, voir
+/// DECISIONS A-013 et le crédit dans « À propos ») — jamais deux fois le
+/// même d'affilée.
 ///
 /// Quelques « voix » tournent à tour de rôle, pour que des taps rapides se
 /// chevauchent au lieu de se couper. Le son se mélange à la musique en cours
@@ -12,7 +13,7 @@ import 'package:audioplayers/audioplayers.dart';
 class FartPlayer {
   FartPlayer({Random? random}) : _random = random ?? Random();
 
-  static const int variantCount = 6;
+  static const int variantCount = 8;
   static const int _voiceCount = 3;
 
   final Random _random;
@@ -30,7 +31,7 @@ class FartPlayer {
       final voice = _voices[_nextVoice];
       _nextVoice = (_nextVoice + 1) % _voices.length;
       await voice.stop();
-      await voice.play(AssetSource('sounds/prout_${variant + 1}.wav'));
+      await voice.play(AssetSource('sounds/prout_${variant + 1}.ogg'));
     } catch (_) {
       // Pas de son possible (tests, lecteur indisponible) : la blague
       // tombe à plat, mais la saisie du score, elle, ne doit jamais planter.
