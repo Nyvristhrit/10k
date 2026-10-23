@@ -21,6 +21,22 @@ void main() {
     expect(repo.loadDiceTrayEnabled(), isTrue);
   });
 
+  test('Bon dernier : gags actifs par défaut, et mémorisés', () {
+    final repo = SettingsRepository(dir);
+    expect(repo.loadCradoFartsEnabled(), isTrue);
+    expect(repo.loadCradoStainsEnabled(), isTrue);
+    expect(repo.loadCradoStains(), (gameId: null, count: 0));
+
+    repo
+      ..saveCradoFartsEnabled(false)
+      ..saveCradoStainsEnabled(false)
+      ..saveCradoStains(gameId: 'g1', count: 4);
+    final reread = SettingsRepository(dir);
+    expect(reread.loadCradoFartsEnabled(), isFalse);
+    expect(reread.loadCradoStainsEnabled(), isFalse);
+    expect(reread.loadCradoStains(), (gameId: 'g1', count: 4));
+  });
+
   test('mémorise le réglage des dés dans l\'appli', () {
     final repo = SettingsRepository(dir);
     repo.saveDiceTrayEnabled(false);

@@ -10,6 +10,59 @@
 > techniques justifiés), `docs/BACKLOG.md` (reste à faire) et
 > `docs/SPECIFICATION.md` (règles du jeu détaillées).
 
+## [v1.7.0] — 2026-10-23
+
+### Ajouté
+- **Changer un joueur de place en partie par glisser-déposer** (demandé par
+  un ami de Ben, quand deux joueurs échangent de place à table) : appui long
+  sur une tuile, elle se soulève et suit le doigt ; lâchée sur un autre
+  joueur, elle prend sa place et les joueurs entre les deux se décalent d'un
+  cran. Relâchée sur place sans bouger, on retrouve l'ancien appui long
+  (« Faire quitter … ? »). Moteur : nouvelle commande `MovePlayer`, qui ne
+  fait que renuméroter les `seatIndex` — le joueur dont c'est le tour garde
+  la main, la suite du tour guidé suit le nouvel ordre ; en dernière chance,
+  la file d'attente est remise dans le nouvel ordre. Pas journalisée comme
+  une action (comme `SelectGuidedPlayer`) : absente de l'historique, et
+  « Annuler » continue de viser le dernier score/passage.
+
+- **Mode trash : le bon dernier 💩.** Le dernier du classement (celui dont le totem est
+  déjà remplacé par un 💩) lâche un **prout** bref à chaque bouton qu'il
+  touche dans la saisie du score (+N, −N, Effacer, Valider ; 6 sons tirés au
+  hasard, jamais deux fois le même d'affilée) et prend une **tache marron**
+  de plus sur sa tuile (et sur la fenêtre de saisie). Quand un autre joueur
+  devient bon dernier, il **récupère toutes les taches**. Les taches
+  repartent de zéro à chaque nouvelle partie. Deux interrupteurs dans
+  « Paramètres de la partie », section « Le bon dernier 💩 » (visible en mode
+  trash seulement) : « Prouts du bon dernier » et « Taches du bon dernier »,
+  activés par défaut. Voir DECISIONS A-013.
+- Les éclaboussures (`CradoStains`) sont dessinées en code
+  (`CustomPainter`), avec un petit rebond pour la dernière arrivée : **un
+  seul marron opaque** (deux taches qui se chevauchent = même marron uni,
+  pas de teintes empilées — demande de Ben), de plus en plus grosses au fil
+  de la partie, **sous** le texte de la tuile (qui passe en blanc). À la
+  longue, la tuile du dernier devient presque entièrement marron, constellée
+  de gouttelettes. Pas de reflet (le point blanc faisait bizarre).
+
+### Retiré
+- **Carte « Envie de soutenir le projet ? » (Ko-fi) dans « À propos »** :
+  Google Play n'aime pas les appels aux dons dans les applis (règles de
+  paiement). Le lien reste sur la page de téléchargement. Le package
+  `url_launcher` (qui ne servait qu'à ça) et sa déclaration dans
+  `AndroidManifest.xml` sont retirés aussi.
+
+### Corrigé
+- **Temps de jeu cumulé (Stats & records)** : il valait « créée → terminée »,
+  donc comptait la préparation et toutes les pauses (une partie créée la
+  veille et finie le lendemain pesait près de 24 h). Il additionne désormais
+  les écarts entre deux saisies, du lancement à la victoire, chacun plafonné
+  à 10 min (`GameStats.playTimeOf`). Le cumul peut encore baisser si on
+  annule une victoire : la partie redevient « en cours » et sort du bilan,
+  et elle est effacée si on lance une nouvelle partie sans la finir.
+- ~~Filtre du +10 000 d'un coup dans « Plus gros carton »~~ : ajouté puis
+  retiré le jour même — Ben confirme qu'un 10 000 au premier tour est déjà
+  arrivé aux dés. Le record reste le plus gros score saisi en une fois, sans
+  exception.
+
 ## [v1.6.1] — 2026-10-02
 
 > Pas d'entrée « Quoi de neuf » ni sur la page de téléchargement : Ben juge

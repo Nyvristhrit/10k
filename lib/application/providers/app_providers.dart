@@ -8,7 +8,9 @@ import '../../domain/models/alias_profile.dart';
 import '../../domain/models/game_state.dart';
 import '../../domain/repositories/game_repository.dart';
 import '../../domain/services/game_engine.dart';
+import '../../shared/trash/fart_player.dart';
 import '../controllers/alias_profiles_controller.dart';
+import '../controllers/crado_controller.dart';
 import '../controllers/dice_tray_controller.dart';
 import '../controllers/game_controller.dart';
 import '../controllers/keep_screen_on_controller.dart';
@@ -52,6 +54,23 @@ final keepScreenOnEnabledProvider =
 /// Réglage « dés dans l'appli » (icône sur le plateau, mémorisé, défaut oui).
 final diceTrayEnabledProvider =
     NotifierProvider<DiceTrayController, bool>(DiceTrayController.new);
+
+/// Réglages du « bon dernier » du mode trash (prouts, taches), mémorisés.
+final cradoSettingsProvider =
+    NotifierProvider<CradoSettingsController, CradoSettings>(
+        CradoSettingsController.new);
+
+/// Taches accumulées par le bon dernier dans la partie en cours.
+final cradoStainsProvider = NotifierProvider<CradoStainsController,
+    ({String? gameId, int count})>(CradoStainsController.new);
+
+/// Lecteur des prouts du bon dernier (un seul pour toute l'appli). Surchargeable
+/// dans les tests, qui n'ont pas de lecteur audio.
+final fartPlayerProvider = Provider<FartPlayer>((ref) {
+  final player = FartPlayer();
+  ref.onDispose(player.dispose);
+  return player;
+});
 
 /// Tous les profils d'alias créés sur l'appareil (§ évolution « alias
 /// joueur »), proposés dans la modalité de sélection plutôt que retapés, et

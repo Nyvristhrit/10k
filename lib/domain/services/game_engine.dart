@@ -74,6 +74,7 @@ class GameEngine {
       RecordScore() => _recordScore(state, command),
       PassTurn() => _passTurn(state, command),
       LeaveGame() => _leaveGame(state, command),
+      MovePlayer() => _movePlayer(state, command),
       UndoLastAction() => _undo(state),
     };
   }
@@ -403,6 +404,64 @@ class GameEngine {
 
     final action = _turnAction(GameActionType.playerLeft, cmd.playerId, state, ctx);
     return _ok(state, ctx.build(state, action), action, messages);
+  }
+
+  // ── Changement de place ─────────────────────────────────────────────────────
+
+  /// Réordonne la table (voir [MovePlayer]). Aucune action n'est journalisée,
+  /// comme pour [SelectGuidedPlayer] : ce n'est pas un coup de jeu, il
+  /// n'apparaît pas dans l'historique et « Annuler » continue de viser le
+  /// dernier score/passage (on redéplace simplement la tuile pour revenir en
+  /// arrière). Les manches ordinaires n'ont rien à recalculer : le joueur
+  /// suivant est choisi par place au moment où le tour avance (`_nextBySeat`).
+  EngineResult _movePlayer(GameState state, MovePlayer cmd) {
+    if (state.status == GameStatus.finished ||
+        state.status == GameStatus.archived) {
+      return _fail(GameRuleViolationCode.gameAlreadyFinished);
+    }
+    final mover = state.playerById(cmd.playerId);
+    final target = state.playerById(cmd.targetPlayerId);
+    if (mover == null || target == null) {
+      return _fail(GameRuleViolationCode.playerNotFound);
+    }
+    if (mover.id == target.id) return _ok(state, state, null);
+
+    // Les joueurs partis gardent une place (cachée) : on réordonne toute la
+    // table, le déplacé prend l'indice exact de la cible.
+    final ordered = [...state.players]
+      ..sort((a, b) => a.seatIndex.compareTo(b.seatIndex));
+    final to = ordered.indexWhere((p) => p.id == target.id);
+    ordered.removeWhere((p) => p.id == mover.id);
+    ordered.insert(to, mover);
+    final seats = {for (var i = 0; i < ordered.length; i++) ordered[i].id: i};
+    final players = [
+      for (final p in state.players) p.copyWith(seatIndex: seats[p.id])
+    ];
+
+    // Dernière chance : la file d'attente est figée au déclenchement, on la
+    // remet dans le nouvel ordre en partant du joueur en cours (il garde la
+    // main) ou, en mode libre, juste après le candidat à la victoire.
+    var finalChance = state.finalChanceState;
+    if (finalChance != null && finalChance.pendingPlayerIds.isNotEmpty) {
+      final anchor = finalChance.currentPlayerId ??
+          finalChance.currentCandidatePlayerId;
+      final anchorSeat = seats[anchor]!;
+      int rank(String id) {
+        final seat = seats[id]!;
+        return seat >= anchorSeat ? seat - anchorSeat : seat + ordered.length;
+      }
+
+      final pending = [...finalChance.pendingPlayerIds]
+        ..sort((a, b) => rank(a).compareTo(rank(b)));
+      finalChance = finalChance.copyWith(pendingPlayerIds: pending);
+    }
+
+    final next = state.copyWith(
+      players: players,
+      finalChanceState: finalChance,
+      updatedAt: _now(),
+    );
+    return _ok(state, next, null);
   }
 
   // ── Annulation (§19) ──────────────────────────────────────────────────────────

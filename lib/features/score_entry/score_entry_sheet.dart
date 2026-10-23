@@ -10,6 +10,7 @@ import '../../domain/models/player.dart';
 import '../../domain/services/encounter_summary.dart';
 import '../../domain/services/game_transition.dart';
 import '../../domain/services/trash_targets.dart';
+import '../../shared/trash/crado_stains.dart';
 import '../../shared/trash/trash_taunts.dart';
 import '../../shared/widgets/player_visuals.dart';
 import '../game_board/encounter_alert.dart';
@@ -69,21 +70,48 @@ class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
     return true;
   }
 
+  /// Le joueur qui saisit est-il le bon dernier (totem 💩, mode
+  /// trash) ? Évalué à l'ouverture : le titre ne change qu'une fois le
+  /// score validé.
+  late final bool _isCrado = () {
+    final game = ref.read(gameControllerProvider).value;
+    return TenkSkin.of(context).trash &&
+        game != null &&
+        lastPlaceId(game) == player.id;
+  }();
+
+  /// Gag du bon dernier, à chaque bouton touché : un prout et une tache de
+  /// plus (chacun désactivable dans les paramètres).
+  void _cradoTap() {
+    if (!_isCrado) return;
+    final crado = ref.read(cradoSettingsProvider);
+    if (crado.farts) ref.read(fartPlayerProvider).play();
+    final game = ref.read(gameControllerProvider).value;
+    if (crado.stains && game != null) {
+      ref.read(cradoStainsProvider.notifier).splash(game.id);
+    }
+  }
+
   void _add(int delta) {
     HapticFeedback.selectionClick();
+    _cradoTap();
     setState(() {
       _amount = (_amount + delta).clamp(0, 1 << 30);
       _message = null;
     });
   }
 
-  void _clear() => setState(() {
-        _amount = 0;
-        _message = null;
-      });
+  void _clear() {
+    _cradoTap();
+    setState(() {
+      _amount = 0;
+      _message = null;
+    });
+  }
 
   Future<void> _validate() async {
     if (_busy) return;
+    _cradoTap();
     setState(() => _busy = true);
     final controller = ref.read(gameControllerProvider.notifier);
     final result = await controller.recordScore(player.id, _amount);
@@ -182,6 +210,10 @@ class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
     final scheme = Theme.of(context).colorScheme;
     final game = ref.watch(gameControllerProvider).value;
     final shamedId = trash && game != null ? lastPlaceId(game) : null;
+    final stains = _isCrado && ref.watch(cradoSettingsProvider).stains
+        ? ref.watch(cradoStainsProvider.select(
+            (s) => s.gameId == game?.id ? s.count : 0))
+        : 0;
 
     // Coupures affichées : la plus grosse en haut pour taper vite.
     final steps = <int>[1000, 500, 100, if (rules.scoreStep == 50) 50];
@@ -213,100 +245,113 @@ class _ScoreEntryDialogState extends ConsumerState<_ScoreEntryDialog> {
         ),
         clipBehavior: Clip.antiAlias,
         constraints: BoxConstraints(maxWidth: 460, maxHeight: maxHeight),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+        child: Stack(
+          children: [
+            // Le bon dernier salit aussi le fond de la fenêtre à chaque bouton
+            // touché (sous les boutons, qui restent lisibles).
+            Positioned.fill(child: CradoStains(count: stains)),
+            _content(context, scheme, trash, shamedId, accent, steps,
+                rowHeight),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _content(BuildContext context, ColorScheme scheme, bool trash,
+      String? shamedId, Color accent, List<int> steps, double rowHeight) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Text(
-                      emojiInGame(player, trash: trash, shamedId: shamedId),
-                      style: const TextStyle(fontSize: 34)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text('${player.displayName} — score du tour',
-                        style: const TextStyle(
-                            fontSize: 19, fontWeight: FontWeight.w800)),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
               Text(
-                '$_amount',
-                style: TextStyle(
-                    fontSize: 88,
-                    fontWeight: FontWeight.w900,
-                    color: accent,
-                    letterSpacing: -2,
-                    height: 1),
-              ),
-              const SizedBox(height: 6),
-              Text('Total après validation : ${player.score + _amount}',
-                  style:
-                      TextStyle(color: scheme.onSurfaceVariant, fontSize: 14)),
-              const SizedBox(height: 20),
-              for (final step in steps) ...[
-                _StepRow(
-                  amount: step,
-                  height: rowHeight,
-                  onAdd: () => _add(step),
-                  onSubtract: _amount >= step ? () => _add(-step) : null,
-                ),
-                const SizedBox(height: _kRowGap),
-              ],
-              if (_message != null) ...[
-                const SizedBox(height: 4),
-                Text(_message!,
-                    textAlign: TextAlign.center,
+                  emojiInGame(player, trash: trash, shamedId: shamedId),
+                  style: const TextStyle(fontSize: 34)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('${player.displayName} — score du tour',
                     style: const TextStyle(
-                        color: Color(0xFFFFB4A9), fontWeight: FontWeight.w600)),
-              ],
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      style: OutlinedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(72),
-                          foregroundColor: scheme.onSurfaceVariant,
-                          side: BorderSide(
-                              color: scheme.outline.withValues(alpha: 0.5))),
-                      onPressed: _amount == 0 ? null : _clear,
-                      child: const Text('Effacer',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.w700)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: _validateGreen,
-                        foregroundColor: _offWhite,
-                        disabledBackgroundColor:
-                            _validateGreen.withValues(alpha: 0.30),
-                        disabledForegroundColor:
-                            _offWhite.withValues(alpha: 0.55),
-                        minimumSize: const Size.fromHeight(72),
-                      ),
-                      onPressed: _canValidate && !_busy ? _validate : null,
-                      child: Text(_amount > 0 ? 'Valider +$_amount' : 'Valider',
-                          style: const TextStyle(
-                              fontSize: 22, fontWeight: FontWeight.w900)),
-                    ),
-                  ),
-                ],
+                        fontSize: 19, fontWeight: FontWeight.w800)),
+              ),
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close),
+                color: scheme.onSurfaceVariant,
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 8),
+          Text(
+            '$_amount',
+            style: TextStyle(
+                fontSize: 88,
+                fontWeight: FontWeight.w900,
+                color: accent,
+                letterSpacing: -2,
+                height: 1),
+          ),
+          const SizedBox(height: 6),
+          Text('Total après validation : ${player.score + _amount}',
+              style:
+                  TextStyle(color: scheme.onSurfaceVariant, fontSize: 14)),
+          const SizedBox(height: 20),
+          for (final step in steps) ...[
+            _StepRow(
+              amount: step,
+              height: rowHeight,
+              onAdd: () => _add(step),
+              onSubtract: _amount >= step ? () => _add(-step) : null,
+            ),
+            const SizedBox(height: _kRowGap),
+          ],
+          if (_message != null) ...[
+            const SizedBox(height: 4),
+            Text(_message!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    color: Color(0xFFFFB4A9), fontWeight: FontWeight.w600)),
+          ],
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(72),
+                      foregroundColor: scheme.onSurfaceVariant,
+                      side: BorderSide(
+                          color: scheme.outline.withValues(alpha: 0.5))),
+                  onPressed: _amount == 0 ? null : _clear,
+                  child: const Text('Effacer',
+                      style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w700)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 2,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _validateGreen,
+                    foregroundColor: _offWhite,
+                    disabledBackgroundColor:
+                        _validateGreen.withValues(alpha: 0.30),
+                    disabledForegroundColor:
+                        _offWhite.withValues(alpha: 0.55),
+                    minimumSize: const Size.fromHeight(72),
+                  ),
+                  onPressed: _canValidate && !_busy ? _validate : null,
+                  child: Text(_amount > 0 ? 'Valider +$_amount' : 'Valider',
+                      style: const TextStyle(
+                          fontSize: 22, fontWeight: FontWeight.w900)),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

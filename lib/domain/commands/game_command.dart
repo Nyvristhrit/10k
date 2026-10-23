@@ -122,6 +122,18 @@ class LeaveGame extends GameCommand {
   final String playerId;
 }
 
+/// Déplace un joueur à la place d'un autre autour de la table (glisser-déposer
+/// d'une tuile sur le plateau) : [playerId] prend la place de
+/// [targetPlayerId], les joueurs entre les deux se décalent d'un cran.
+///
+/// Possible avant comme pendant la partie : le tour guidé suit l'ordre des
+/// places, le joueur dont c'est le tour ne change pas.
+class MovePlayer extends GameCommand {
+  const MovePlayer({required this.playerId, required this.targetPlayerId});
+  final String playerId;
+  final String targetPlayerId;
+}
+
 /// Annule la dernière action complète non annulée (§19).
 class UndoLastAction extends GameCommand {
   const UndoLastAction();

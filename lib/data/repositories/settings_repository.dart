@@ -106,6 +106,38 @@ class SettingsRepository {
   void saveDiceTrayEnabled(bool enabled) =>
       _write('diceTrayEnabled', enabled);
 
+  /// Mode trash : le bon dernier pète-t-il à chaque bouton de la
+  /// saisie du score (défaut : oui) ?
+  bool loadCradoFartsEnabled() {
+    final raw = _read()['cradoFartsEnabled'];
+    return raw is bool ? raw : true;
+  }
+
+  void saveCradoFartsEnabled(bool enabled) =>
+      _write('cradoFartsEnabled', enabled);
+
+  /// Mode trash : le bon dernier se couvre-t-il de taches (défaut : oui) ?
+  bool loadCradoStainsEnabled() {
+    final raw = _read()['cradoStainsEnabled'];
+    return raw is bool ? raw : true;
+  }
+
+  void saveCradoStainsEnabled(bool enabled) =>
+      _write('cradoStainsEnabled', enabled);
+
+  /// Taches accumulées par le bon dernier, pour la partie [gameId] seulement
+  /// (une nouvelle partie repart propre).
+  ({String? gameId, int count}) loadCradoStains() {
+    final raw = _read()['cradoStains'];
+    if (raw is Map && raw['gameId'] is String && raw['count'] is int) {
+      return (gameId: raw['gameId'] as String, count: raw['count'] as int);
+    }
+    return (gameId: null, count: 0);
+  }
+
+  void saveCradoStains({required String gameId, required int count}) =>
+      _write('cradoStains', {'gameId': gameId, 'count': count});
+
   /// Tous les profils d'alias déjà créés sur l'appareil (§ évolution « alias
   /// joueur ») : de quoi les reproposer d'une partie à l'autre sans les
   /// retaper, et alimenter l'écran « Alias & profils ».

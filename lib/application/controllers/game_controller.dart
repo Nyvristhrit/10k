@@ -89,6 +89,8 @@ class GameController extends AsyncNotifier<GameState?> {
       dispatch(PassTurn(playerId: id, reason: reason, confirmed: confirmed));
   Future<EngineResult> leaveGame(String id) =>
       dispatch(LeaveGame(playerId: id));
+  Future<EngineResult> movePlayer(String id, {required String toSeatOf}) =>
+      dispatch(MovePlayer(playerId: id, targetPlayerId: toSeatOf));
   Future<EngineResult> undo() => dispatch(const UndoLastAction());
 
   /// Revient à l'état juste après l'action [actionId] (écran d'historique) :

@@ -76,7 +76,9 @@ void main() {
       s = ok(engine.apply(s, const StartGame()));
       final a = s.players[0].id;
       final b = s.players[1].id;
-      s = ok(engine.apply(s, RecordScore(playerId: a, amount: 10000)));
+      s = ok(engine.apply(s, RecordScore(playerId: a, amount: 5000)));
+      s = ok(engine.apply(s, PassTurn(playerId: b)));
+      s = ok(engine.apply(s, RecordScore(playerId: a, amount: 5000)));
       s = ok(engine.apply(s, PassTurn(playerId: b)));
 
       expect(s.status, GameStatus.finished);
@@ -85,7 +87,7 @@ void main() {
       expect(stats.topWinner?.name, 'Alpha');
       expect(stats.topWinner?.value, 1);
       expect(stats.biggestHit?.name, 'Alpha');
-      expect(stats.biggestHit?.value, 10000);
+      expect(stats.biggestHit?.value, 5000);
       expect(stats.averageRoundsByTarget[10000], isNotNull);
       expect(stats.totalPlayTime, isNot(Duration.zero));
     });
@@ -132,7 +134,9 @@ void main() {
       final b = s.players[1].id;
       s = ok(engine.apply(s, SetPlayerAlias(playerId: a, alias: 'Ben')));
       s = ok(engine.apply(s, const StartGame()));
-      s = ok(engine.apply(s, RecordScore(playerId: a, amount: 10000)));
+      s = ok(engine.apply(s, RecordScore(playerId: a, amount: 5000)));
+      s = ok(engine.apply(s, PassTurn(playerId: b)));
+      s = ok(engine.apply(s, RecordScore(playerId: a, amount: 5000)));
       s = ok(engine.apply(s, PassTurn(playerId: b)));
 
       final stats = GameStats.of([s]);
@@ -147,6 +151,67 @@ void main() {
       final stats = GameStats.of([g1.state, g2.state]);
       expect(stats.gamesPlayed, 2);
       expect(stats.totalPlayTime.inMinutes, greaterThan(0));
+    });
+
+    test('un +10 000 d\'un coup reste un record (ça arrive aux dés !)', () {
+      final g = finishedGame(); // A gagne d'un seul coup de +10 000
+      expect(GameStats.of([g.state]).biggestHit?.value, 10000);
+    });
+  });
+
+  group('Temps de jeu (playTimeOf)', () {
+    /// Partie dont on règle l'horloge à la main entre deux commandes.
+    late DateTime now;
+    late GameEngine engine;
+    setUp(() {
+      now = DateTime(2026, 1, 1, 20);
+      var counter = 0;
+      engine = GameEngine(
+        idGenerator: () => 'id${counter++}',
+        clock: () => now,
+        random: Random(42),
+      );
+    });
+
+    test('compte du lancement à la victoire, pas la préparation', () {
+      var s = engine.createGame();
+      s = ok(engine.apply(s, const AddPlayer()));
+      s = ok(engine.apply(s, const AddPlayer()));
+      final a = s.players[0].id;
+      final b = s.players[1].id;
+      now = now.add(const Duration(minutes: 7)); // préparation, non comptée
+      s = ok(engine.apply(s, const StartGame()));
+      now = now.add(const Duration(minutes: 2));
+      s = ok(engine.apply(s, RecordScore(playerId: a, amount: 5000)));
+      now = now.add(const Duration(minutes: 3));
+      s = ok(engine.apply(s, PassTurn(playerId: b)));
+      now = now.add(const Duration(minutes: 1));
+      s = ok(engine.apply(s, RecordScore(playerId: a, amount: 5000)));
+      now = now.add(const Duration(minutes: 4));
+      s = ok(engine.apply(s, PassTurn(playerId: b)));
+      expect(s.status, GameStatus.finished);
+
+      expect(GameStats.playTimeOf(s), const Duration(minutes: 10));
+    });
+
+    test('une longue pause (partie laissée ouverte) est plafonnée', () {
+      var s = engine.createGame();
+      s = ok(engine.apply(s, const AddPlayer()));
+      s = ok(engine.apply(s, const AddPlayer()));
+      final a = s.players[0].id;
+      final b = s.players[1].id;
+      s = ok(engine.apply(s, const StartGame()));
+      now = now.add(const Duration(minutes: 2));
+      s = ok(engine.apply(s, RecordScore(playerId: a, amount: 5000)));
+      now = now.add(const Duration(hours: 20)); // repris le lendemain
+      s = ok(engine.apply(s, PassTurn(playerId: b)));
+      now = now.add(const Duration(minutes: 1));
+      s = ok(engine.apply(s, RecordScore(playerId: a, amount: 5000)));
+      now = now.add(const Duration(minutes: 1));
+      s = ok(engine.apply(s, PassTurn(playerId: b)));
+
+      expect(GameStats.playTimeOf(s),
+          const Duration(minutes: 4) + GameStats.maxGapBetweenMoves);
     });
   });
 }

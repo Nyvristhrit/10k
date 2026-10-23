@@ -48,7 +48,7 @@ class GameStats {
   /// Rencontres déclenchées, toutes parties confondues.
   final int totalEncounters;
 
-  /// Temps de jeu cumulé (somme des durées créée→terminée quand connues).
+  /// Temps de jeu cumulé : somme des [playTimeOf] de chaque partie.
   final Duration totalPlayTime;
 
   /// Nombre moyen de manches par partie, groupé par score cible (mode guidé
@@ -81,6 +81,42 @@ class GameStats {
     averageRoundsByTarget: {},
   );
 
+  /// Au-delà, un blanc entre deux saisies est une pause (repas, partie
+  /// laissée ouverte jusqu'au lendemain…) : il ne compte que pour cette durée.
+  static const Duration maxGapBetweenMoves = Duration(minutes: 10);
+
+  /// Temps réellement passé à jouer une partie : du lancement à la victoire,
+  /// en additionnant les écarts entre deux saisies successives (scores,
+  /// passages, annulations), chacun plafonné à [maxGapBetweenMoves].
+  ///
+  /// L'ancien calcul (« créée → terminée ») comptait aussi la préparation et
+  /// toutes les pauses : une partie créée la veille au soir et jouée le
+  /// lendemain pesait près de 24 h. Le cumul pouvait aussi baisser d'une fois
+  /// sur l'autre quand une victoire était annulée (la partie redevient « en
+  /// cours » et sort du bilan) — ça, c'est voulu : elle n'est plus terminée.
+  static Duration playTimeOf(GameState game) {
+    final start = game.actions
+        .where((a) => a.type == GameActionType.gameStarted)
+        .map((a) => a.createdAt)
+        .firstOrNull;
+    if (start == null) return Duration.zero;
+    final moments = <DateTime>[
+      start,
+      for (final a in game.actions) ...[
+        if (a.createdAt.isAfter(start)) a.createdAt,
+        if (a.undoneAt != null && a.undoneAt!.isAfter(start)) a.undoneAt!,
+      ],
+      if (game.finishedAt != null && game.finishedAt!.isAfter(start))
+        game.finishedAt!,
+    ]..sort();
+    var total = Duration.zero;
+    for (var i = 1; i < moments.length; i++) {
+      final gap = moments[i].difference(moments[i - 1]);
+      total += gap > maxGapBetweenMoves ? maxGapBetweenMoves : gap;
+    }
+    return total;
+  }
+
   /// Calcule le bilan à partir des parties terminées (statut `finished` ou
   /// `archived` — les autres, en cours, n'ont pas encore de résultat).
   static GameStats of(List<GameState> games) {
@@ -104,9 +140,7 @@ class GameStats {
       final facts = GameFacts.of(game);
       totalTurns += facts.turnsPlayed;
 
-      if (game.finishedAt != null) {
-        totalPlayTime += game.finishedAt!.difference(game.createdAt);
-      }
+      totalPlayTime += playTimeOf(game);
 
       if (game.rules.turnMode == TurnMode.guided && facts.roundsPlayed > 0) {
         roundsByTarget

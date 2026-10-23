@@ -39,10 +39,9 @@
         imposé aux comptes personnels récents.
   - [ ] **Signature release** (ligne ci-dessus) — clé dédiée, à sauvegarder.
   - [ ] **Build `.aab`** (`flutter build appbundle`) au lieu de l'APK.
-  - [ ] **Retirer le bouton Ko-fi de la version Play Store** (onglet « À
-        propos », `info_screen.dart`) : un lien de don dans l'appli risque
-        un refus (règles de paiement Google Play). Le garder dans la version
-        GitHub et sur la page de téléchargement.
+  - [x] **Bouton Ko-fi retiré de l'appli** (2026-10-23, toutes versions) :
+        un lien de don dans l'appli risque un refus (règles de paiement
+        Google Play). Il reste sur la page de téléchargement.
   - [ ] **Mettre à jour les mentions légales** (`docs/mentions-legales.html`)
         quand l'appli passera sous la société : raison sociale, forme
         juridique, SIRET, adresse du siège, directeur de la publication,

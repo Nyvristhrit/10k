@@ -89,6 +89,10 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
     // Dépendance au gel des scores : rebâtit les tuiles quand on fige/révèle les
     // totaux autour d'une rencontre (les tuiles lisent la valeur dans `_tile`).
     ref.watch(frozenScoresProvider);
+    // Idem pour les taches du bon dernier (mode trash), qui s'ajoutent pendant
+    // la saisie du score et passent d'un joueur à l'autre avec le titre.
+    ref.watch(cradoStainsProvider);
+    ref.watch(cradoSettingsProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -277,24 +281,107 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
   /// Construit une tuile de joueur. La clé globale stable permet à Flutter de
   /// « suivre » (déplacer) la tuile quand elle passe de la grille à la vedette,
   /// sans la recréer : le score continue de s'animer et le halo reste intact.
+  ///
+  /// Appui long : la tuile se soulève et suit le doigt. Lâchée sur un autre
+  /// joueur, elle prend sa place (changement de place à table, demandé par un
+  /// ami de Ben) ; relâchée sur place sans bouger, on propose comme avant de
+  /// faire quitter la partie au joueur.
   Widget _tile(BuildContext context, GameState game, Player p,
       String? currentId, String? shamedId,
       {required bool compact}) {
     // Pendant l'alerte de rencontre, on affiche l'ancien total figé ; à la
     // fermeture, le gel est levé et le compteur rejoint la vraie valeur.
     final overrideScore = ref.read(frozenScoresProvider)[p.id];
-    return PlayerBoardTile(
-      key: _keyFor(p.id),
-      player: p,
-      isActive: p.id == currentId,
-      maxLives: game.rules.maxLives,
-      compact: compact,
-      overrideScore: overrideScore,
-      shamed: p.id == shamedId,
-      onTap: () => _onTapTile(context, game, p),
-      onLongPress: () => _confirmLeave(context, p),
+    final stains = p.id == shamedId && ref.read(cradoSettingsProvider).stains
+        ? ref.read(cradoStainsProvider.notifier).countFor(game.id)
+        : 0;
+    PlayerBoardTile build({Key? key}) => PlayerBoardTile(
+          key: key,
+          player: p,
+          isActive: p.id == currentId,
+          maxLives: game.rules.maxLives,
+          compact: compact,
+          overrideScore: overrideScore,
+          shamed: p.id == shamedId,
+          stains: stains,
+          onTap: () => _onTapTile(context, game, p),
+        );
+    final tile = build(key: _keyFor(p.id));
+
+    return DragTarget<String>(
+      onWillAcceptWithDetails: (details) {
+        if (details.data == p.id) return false;
+        HapticFeedback.selectionClick();
+        return true;
+      },
+      onAcceptWithDetails: (details) {
+        HapticFeedback.mediumImpact();
+        ref
+            .read(gameControllerProvider.notifier)
+            .movePlayer(details.data, toSeatOf: p.id);
+      },
+      builder: (context, candidates, _) {
+        // La tuile survolée se rétracte et pâlit : « je te laisse ma place ».
+        final hovered = candidates.isNotEmpty;
+        return LongPressDraggable<String>(
+          data: p.id,
+          hapticFeedbackOnStart: true,
+          onDragStarted: () {
+            _dragSize = _keyFor(p.id).currentContext?.size;
+            _dragOrigin = null;
+            _dragDistance = 0;
+          },
+          onDragUpdate: (details) {
+            final origin =
+                _dragOrigin ??= details.globalPosition - details.delta;
+            final d = (details.globalPosition - origin).distance;
+            if (d > _dragDistance) _dragDistance = d;
+          },
+          onDragEnd: (details) {
+            if (!details.wasAccepted && _dragDistance < _kStillDragTolerance) {
+              _confirmLeave(context, p);
+            }
+          },
+          // La tuile volante vit dans l'Overlay, hors du Scaffold : le
+          // Material transparent lui redonne les styles de texte. Sa taille
+          // est mesurée au décollage (`onDragStarted`), avant ce build.
+          feedback: Builder(
+            builder: (context) => Material(
+              type: MaterialType.transparency,
+              child: SizedBox.fromSize(
+                size: _dragSize ?? const Size(160, 120),
+                child: Transform.rotate(
+                  angle: -0.03,
+                  child: Transform.scale(scale: 1.06, child: build()),
+                ),
+              ),
+            ),
+          ),
+          childWhenDragging: Opacity(opacity: 0.25, child: tile),
+          child: AnimatedScale(
+            scale: hovered ? 0.9 : 1.0,
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            child: AnimatedOpacity(
+              opacity: hovered ? 0.55 : 1.0,
+              duration: const Duration(milliseconds: 160),
+              child: tile,
+            ),
+          ),
+        );
+      },
     );
   }
+
+  /// Distance (px) en dessous de laquelle une tuile soulevée puis relâchée est
+  /// considérée comme « restée sur place » : c'est alors l'ancien appui long
+  /// (faire quitter la partie), pas un déplacement.
+  static const double _kStillDragTolerance = 16;
+
+  // Suivi du glisser en cours (une seule tuile à la fois).
+  Size? _dragSize;
+  Offset? _dragOrigin;
+  double _dragDistance = 0;
 
   Widget _bottomBar(BuildContext context, GameState game, String? currentId) {
     final trash = TenkSkin.of(context).trash;
@@ -334,7 +421,8 @@ class _GameBoardScreenState extends ConsumerState<GameBoardScreen> {
             Text(
               trash
                   ? Taunts.leaveHint
-                  : 'Appui long sur un joueur pour le faire quitter la partie',
+                  : 'Appui long sur un joueur : glisse-le pour changer de '
+                      'place, ou relâche pour le faire quitter',
               textAlign: TextAlign.center,
               style: TextStyle(
                   color: Theme.of(context)

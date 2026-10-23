@@ -190,7 +190,32 @@ class GameSettingsScreen extends ConsumerWidget {
             ),
           ],
         ),
-        if (ref.watch(trashModeProvider)) const TrashAdjectivesSection(),
+        if (ref.watch(trashModeProvider)) ...[
+          _Section(
+            title: 'Le bon dernier 💩',
+            children: [
+              _SwitchTile(
+                label: 'Prouts du bon dernier',
+                subtitle:
+                    'Le bon dernier (le 💩) lâche un prout à chaque bouton '
+                    'qu\'il touche en saisissant son score.',
+                value: ref.watch(cradoSettingsProvider).farts,
+                onChanged: (v) =>
+                    ref.read(cradoSettingsProvider.notifier).setFarts(v),
+              ),
+              _SwitchTile(
+                label: 'Taches du bon dernier',
+                subtitle:
+                    'Chaque bouton touché lui fait une tache de plus sur sa '
+                    'tuile. Le prochain bon dernier récupère toute la saleté.',
+                value: ref.watch(cradoSettingsProvider).stains,
+                onChanged: (v) =>
+                    ref.read(cradoSettingsProvider.notifier).setStains(v),
+              ),
+            ],
+          ),
+          const TrashAdjectivesSection(),
+        ],
       ],
     );
   }

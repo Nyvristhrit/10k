@@ -920,4 +920,89 @@ void main() {
           GameRuleViolationCode.noActionToUndo);
     });
   });
+
+  // ── Changement de place (glisser-déposer d'une tuile) ─────────────────────
+  group('Changement de place', () {
+    List<String> seatOrder(GameState s) =>
+        s.activePlayers.map((p) => p.id).toList();
+
+    test('vers l\'arrière : prend la place de la cible, les autres remontent',
+        () {
+      final r = start(4);
+      final [a, b, c, d] = r.ids;
+      final s = ok(r.engine.apply(r.state, MovePlayer(playerId: a, targetPlayerId: c)));
+      expect(seatOrder(s), [b, c, a, d]);
+      expect(s.players.map((p) => p.seatIndex).toSet(), {0, 1, 2, 3});
+    });
+
+    test('vers l\'avant : prend la place de la cible, les autres descendent',
+        () {
+      final r = start(4);
+      final [a, b, c, d] = r.ids;
+      final s = ok(r.engine.apply(r.state, MovePlayer(playerId: d, targetPlayerId: b)));
+      expect(seatOrder(s), [a, d, b, c]);
+    });
+
+    test('n\'est pas une action : rien dans l\'historique, « Annuler » vise '
+        'toujours le dernier score', () {
+      final r = start(3);
+      final e = r.engine;
+      final [a, b, c] = r.ids;
+      var s = ok(e.apply(r.state, RecordScore(playerId: a, amount: 500)));
+      final actions = s.actions.length;
+      s = ok(e.apply(s, MovePlayer(playerId: c, targetPlayerId: a)));
+      expect(s.actions.length, actions);
+      s = ok(e.apply(s, const UndoLastAction()));
+      expect(scoreOf(s, a), 0);
+      // La nouvelle place survit à l'annulation du score.
+      expect(seatOrder(s), [c, a, b]);
+    });
+
+    test('mode guidé : le joueur en cours garde la main, la suite suit le '
+        'nouvel ordre', () {
+      final r = start(4, mode: TurnMode.guided);
+      final e = r.engine;
+      final [a, b, c, d] = r.ids;
+      expect(r.state.roundState!.currentPlayerId, a);
+      // D vient s'asseoir juste après A.
+      var s = ok(e.apply(r.state, MovePlayer(playerId: d, targetPlayerId: b)));
+      expect(s.roundState!.currentPlayerId, a);
+      s = ok(e.apply(s, PassTurn(playerId: a)));
+      expect(s.roundState!.currentPlayerId, d);
+      s = ok(e.apply(s, PassTurn(playerId: d)));
+      expect(s.roundState!.currentPlayerId, b);
+      s = ok(e.apply(s, PassTurn(playerId: b)));
+      expect(s.roundState!.currentPlayerId, c);
+      // Manche suivante : on repart du premier siège.
+      s = ok(e.apply(s, PassTurn(playerId: c)));
+      expect(s.roundState!.roundNumber, 2);
+      expect(s.roundState!.currentPlayerId, a);
+    });
+
+    test('dernière chance : la file d\'attente suit le nouvel ordre', () {
+      final r = start(4, mode: TurnMode.guided);
+      final e = r.engine;
+      final [a, b, c, d] = r.ids;
+      var s = ok(e.apply(r.state, RecordScore(playerId: a, amount: 10000)));
+      expect(s.status, GameStatus.finalChance);
+      expect(s.finalChanceState!.currentPlayerId, b);
+      // D passe devant C : B garde la main, puis D, puis C.
+      s = ok(e.apply(s, MovePlayer(playerId: d, targetPlayerId: c)));
+      expect(s.finalChanceState!.currentPlayerId, b);
+      expect(s.finalChanceState!.pendingPlayerIds, [b, d, c]);
+      s = ok(e.apply(s, PassTurn(playerId: b)));
+      expect(s.finalChanceState!.currentPlayerId, d);
+    });
+
+    test('refusé une fois la partie terminée', () {
+      final r = start(2);
+      final e = r.engine;
+      final [a, b] = r.ids;
+      var s = ok(e.apply(r.state, RecordScore(playerId: a, amount: 10000)));
+      s = ok(e.apply(s, PassTurn(playerId: b)));
+      expect(s.status, GameStatus.finished);
+      expect(failCode(e.apply(s, MovePlayer(playerId: b, targetPlayerId: a))),
+          GameRuleViolationCode.gameAlreadyFinished);
+    });
+  });
 }

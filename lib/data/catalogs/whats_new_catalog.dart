@@ -52,6 +52,11 @@ class WhatsNewCatalog {
       'Le plateau de dés virtuel affiche bien 5 dés (au lieu de 6), et la couleur des points reste lisible quelle que soit la teinte tirée.',
       'Les épithètes des noms par défaut (ex. « Tocard », « Farceur ») ne se répètent plus entre deux joueurs de la même partie.',
     ]),
+    WhatsNewRelease(version: '1.7.0', items: [
+      'Change un joueur de place en pleine partie : appui long sur sa tuile, puis glisse-la sur un autre joueur pour prendre sa place. Relâchée sans bouger, elle propose toujours de faire quitter la partie.',
+      'Le temps de jeu cumulé des stats est corrigé : il ne compte plus la préparation ni les longues pauses (partie laissée ouverte jusqu\'au lendemain…).',
+      'Le mode caché devient encore plus… parfumé. 💩',
+    ]),
   ];
 
   /// Les versions strictement postérieures à [seenVersion], dans l'ordre

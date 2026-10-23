@@ -280,6 +280,26 @@
   simple qui relance une manche, délogements en chaîne avec revanche, cas à
   2 joueurs).
 
+### A-013 · Prouts du bon dernier : sons synthétisés en code + `audioplayers` (2026-10-23)
+- **Contexte :** Ben veut que le bon dernier du mode trash (le 💩) lâche un
+  prout bref à chaque bouton de la saisie du score, avec quelques variantes.
+- **Choix :** les 6 sons (`assets/sounds/prout_N.wav`, ~7-18 Ko) sont
+  **synthétisés** par `test/tools/generate_fart_sounds.dart` (train
+  d'impulsions grave qui tremble + souffle bruité, passe-bas, enveloppe
+  courte) plutôt que téléchargés : aucun souci de droits, retouchables en
+  code (même esprit que l'icône dessinée en code). Lecture par
+  **`audioplayers`** (première dépendance audio de l'appli) en mode
+  `lowLatency` (SoundPool sur Android), 3 voix en rotation pour que des taps
+  rapides se chevauchent, contexte audio `mixWithOthers` pour **ne pas
+  couper la musique** qui tournerait sur le téléphone.
+- **Pourquoi pas du code natif maison :** un canal de plateforme Kotlin +
+  SoundPool éviterait la dépendance, mais ajoute du natif à maintenir pour
+  un gag ; `audioplayers` est le standard Flutter, et `FartPlayer` avale
+  toute erreur de lecture (la saisie du score ne doit jamais planter).
+- **Taches :** comptées par **partie**, pas par joueur (`cradoStainsProvider`,
+  mémorisé dans `settings.json` sous `cradoStains`) — elles suivent le titre
+  de bon dernier : le nouveau dernier récupère toute la saleté.
+
 ### A-002 · Undo par valeurs stockées
 - **Choix :** chaque `GameEffect` stocke `previousValue`/`nextValue`. L'annulation ré-applique
   les `previousValue` plutôt que de recalculer.

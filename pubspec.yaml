@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.6.1+9
+version: 1.7.0+10
 
 environment:
   sdk: ^3.12.2
@@ -39,8 +39,9 @@ dependencies:
   flutter_riverpod: ^2.6.1
   path_provider: ^2.1.6
   wakelock_plus: ^1.2.8
-  url_launcher: ^6.3.2
   package_info_plus: ^10.2.1
+  # Prouts du « Cradingue » (mode trash) : lecture de petits sons courts.
+  audioplayers: ^6.8.1
 
 # La version 2.3.x de path_provider_android tire un paquet natif `jni` dont le
 # script de build Android est incompatible avec Gradle. On reste sur la branche
@@ -94,9 +95,10 @@ flutter:
         - asset: assets/fonts/SpaceGrotesk.ttf
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  # Prouts du « Cradingue » (mode trash), synthétisés par
+  # `test/tools/generate_fart_sounds.dart`.
+  assets:
+    - assets/sounds/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

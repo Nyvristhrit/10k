@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../app/theme/tenk_skin.dart';
 import '../../../domain/models/player.dart';
 import '../../../shared/animations/count_up_text.dart';
+import '../../../shared/trash/crado_stains.dart';
 import '../../../shared/trash/trash_taunts.dart';
 import '../../../shared/widgets/player_visuals.dart';
 
@@ -20,6 +21,7 @@ class PlayerBoardTile extends StatefulWidget {
     this.compact = false,
     this.overrideScore,
     this.shamed = false,
+    this.stains = 0,
     super.key,
   });
 
@@ -33,6 +35,10 @@ class PlayerBoardTile extends StatefulWidget {
   /// Bonnet d'âne du mode trash : ce joueur est bon dernier, son totem est
   /// remplacé par un 💩 (calculé par le plateau, voir `lastPlaceId`).
   final bool shamed;
+
+  /// Taches du bon dernier à dessiner sur la tuile (mode trash) —
+  /// voir `CradoStains`. 0 : tuile propre.
+  final int stains;
 
   /// Score à afficher à la place du vrai total, le temps de l'alerte de
   /// rencontre (voir `frozenScoresProvider`). `null` = affiche le vrai score.
@@ -99,7 +105,10 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
     final token = colorFor(widget.player, trash: skin.trash);
     final base = Color(token.backgroundArgb);
     final accent = Color(token.accentArgb ?? token.backgroundArgb);
-    final fg = Color(token.foregroundArgb);
+    // Sur une tuile tachée, le texte passe en blanc (lisible sur le marron,
+    // y compris pour l'ambre et son texte foncé).
+    final fg =
+        widget.stains > 0 ? Colors.white : Color(token.foregroundArgb);
     final player = widget.player;
     final last = player.lastActiveGain;
     // Le rouge « dégât » vire au magenta d'enseigne sous néon.
@@ -164,7 +173,20 @@ class _PlayerBoardTileState extends State<PlayerBoardTile>
                       ),
                   ],
                 ),
-                child: child,
+                child: Stack(
+                  // Même place que l'ancien enfant unique (tuile pleine).
+                  fit: StackFit.expand,
+                  children: [
+                    // Les taches repeignent le fond, sous le texte.
+                    Positioned.fill(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(radius),
+                        child: CradoStains(count: widget.stains),
+                      ),
+                    ),
+                    child!,
+                  ],
+                ),
               ),
             ),
           ),

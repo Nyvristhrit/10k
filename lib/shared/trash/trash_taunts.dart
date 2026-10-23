@@ -108,7 +108,8 @@ class Taunts {
 
   /// Indice de l'appui long.
   static const String leaveHint =
-      'Appui long sur un joueur pour l\'éjecter de la table';
+      'Appui long sur un joueur : glisse pour le changer de place, '
+      'relâche pour l\'éjecter de la table';
 
   /// Reproche quand on touche un joueur qui a déjà joué.
   static String alreadyPlayed(String name) => _fill(
