@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../application/providers/app_providers.dart';
 import '../features/home/home_screen.dart';
+import '../shared/app_icon.dart';
 import 'theme/app_theme.dart';
 
 /// Racine de l'application 10K.
@@ -19,6 +20,10 @@ class TenkApp extends ConsumerWidget {
     // trash change donc l'accent instantanément, sans re-tirer au sort.
     final palette = trash ? AppTheme.trashAccentSeeds : AppTheme.accentSeeds;
     final seed = palette[index % palette.length];
+
+    // L'icône du téléphone suit aussi le mode trash (couleurs néon). Appelé
+    // à chaque reconstruction, mais `sync` ne transmet qu'un changement.
+    AppIcon.sync(trash: trash);
 
     return MaterialApp(
       title: '10K',

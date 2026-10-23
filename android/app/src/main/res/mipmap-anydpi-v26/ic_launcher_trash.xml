@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icône du mode trash (voir DECISIONS A-014) : même dé que ic_launcher,
+     fond aux bandeaux néon. Générée par test/tools/generate_app_icon.dart. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+  <background android:drawable="@drawable/ic_launcher_trash_background"/>
+  <foreground>
+      <inset
+          android:drawable="@drawable/ic_launcher_foreground"
+          android:inset="16%" />
+  </foreground>
+</adaptive-icon>

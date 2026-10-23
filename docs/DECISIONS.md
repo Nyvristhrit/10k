@@ -313,6 +313,33 @@
   mémorisé dans `settings.json` sous `cradoStains`) — elles suivent le titre
   de bon dernier : le nouveau dernier récupère toute la saleté.
 
+### A-014 · Icône du téléphone aux couleurs du mode trash (2026-10-23)
+- **Demande de Ben :** l'icône garde ses formes, mais prend les couleurs du
+  thème trash quand le mode est actif.
+- **Mécanisme Android :** l'écran unique (`TenkActivity`) n'est plus une
+  entrée de lanceur ; deux `activity-alias` le lancent, `.MainActivity`
+  (icône classique, actif par défaut) et `.TrashLauncher` (icône néon,
+  inactif par défaut). Flutter (`AppIcon.sync`, appelé depuis `TenkApp`)
+  déclare l'icône voulue sur le canal `tenk/app_icon` ; Kotlin
+  (`TenkActivity.kt`) n'applique la bascule qu'à `onStop` (quand on quitte
+  l'appli) avec `DONT_KILL_APP` — basculer pendant qu'on est dedans peut
+  fermer l'appli sur certains lanceurs. Il active d'abord la nouvelle
+  entrée puis éteint l'ancienne (jamais sans icône), et ne touche à rien si
+  c'est déjà la bonne.
+- **Pourquoi l'alias classique s'appelle `.MainActivity` :** c'était le nom
+  de l'activité jusqu'en v1.7.0 ; les raccourcis d'écran d'accueil pointent
+  sur ce nom. En le gardant, la mise à jour ne casse pas l'icône posée.
+- **Images :** `test/tools/generate_app_icon.dart` dessine aussi la version
+  trash (bandeaux = `_trashStripes` de `tenk_skin.dart`) et l'écrit
+  directement dans `android/app/src/main/res` (`mipmap-*/ic_launcher_trash`,
+  `drawable-*/ic_launcher_trash_background`, + `mipmap-anydpi-v26/
+  ic_launcher_trash.xml` écrit à la main) : `flutter_launcher_icons` a des
+  noms de fichiers figés et écraserait l'icône classique. Le dé (premier
+  plan) est partagé.
+- **Limites connues :** selon le lanceur, l'icône peut mettre un instant à
+  changer, et un lanceur tiers pourrait retirer le raccourci de l'écran
+  d'accueil lors de la bascule (Pixel : à vérifier avec Ben).
+
 ### A-002 · Undo par valeurs stockées
 - **Choix :** chaque `GameEffect` stocke `previousValue`/`nextValue`. L'annulation ré-applique
   les `previousValue` plutôt que de recalculer.

@@ -57,6 +57,10 @@ class WhatsNewCatalog {
       'Le temps de jeu cumulé des stats est corrigé : il ne compte plus la préparation ni les longues pauses (partie laissée ouverte jusqu\'au lendemain…).',
       'Le mode caché devient encore plus… parfumé. 💩',
     ]),
+    WhatsNewRelease(version: '1.7.1', items: [
+      'Les règles de l\'appli expliquent maintenant comment changer un joueur de place (appui long sur sa tuile, puis glisser).',
+      'Le mode caché sent encore plus fort : de vrais bruitages, des taches qui tournent au camouflage… et l\'icône du téléphone qui se met à ses couleurs.',
+    ]),
   ];
 
   /// Les versions strictement postérieures à [seenVersion], dans l'ordre

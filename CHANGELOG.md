@@ -10,6 +10,22 @@
 > techniques justifiés), `docs/BACKLOG.md` (reste à faire) et
 > `docs/SPECIFICATION.md` (règles du jeu détaillées).
 
+## [v1.7.1] — 2026-10-23
+
+> Publiée pour que les joueurs aient une fenêtre « Quoi de neuf » avec les
+> retouches de la mise à jour du jour de la v1.7.0 (ci-dessous) — Ben ne
+> voulait pas les laisser passer sans annonce.
+
+### Ajouté
+- **L'icône de l'appli suit le mode trash** : mêmes formes (bandeaux en
+  diagonale + dé), mais aux couleurs néon du titre du mode trash quand il
+  est actif. Deux entrées de lanceur (`activity-alias`) dans le manifeste,
+  une seule active à la fois ; la bascule se fait en **quittant** l'appli
+  (`TenkActivity.onStop`). L'écran Flutter s'appelle désormais
+  `TenkActivity` ; l'entrée classique garde le nom `.MainActivity` pour
+  que les icônes déjà posées sur l'écran d'accueil restent valables à la
+  mise à jour. Voir DECISIONS A-014.
+
 ## [v1.7.0, mise à jour du jour] — 2026-10-23
 
 > Retours de Ben sur la v1.7.0, publiés **sans changer de numéro** (choix de
