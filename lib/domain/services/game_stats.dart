@@ -1,0 +1,189 @@
+import '../enums/game_enums.dart';
+import '../models/game_state.dart';
+import '../models/player.dart';
+import 'encounter_summary.dart';
+import 'game_facts.dart';
+
+/// Identité d'un joueur d'une partie à l'autre : son alias s'il en a un,
+/// sinon son nom du jour.
+String _identity(Player p) => p.alias ?? p.displayName;
+
+/// Un fait chiffré nommé, prêt à afficher (« Panda Facétieux — 3 victoires »).
+class NamedStat {
+  const NamedStat({required this.name, required this.value});
+
+  final String name;
+  final int value;
+}
+
+/// Bilan de toutes les parties terminées de l'appareil ([GameFacts] résume
+/// une seule partie). Recalculé à la demande, rien n'est stocké.
+class GameStats {
+  const GameStats({
+    required this.gamesPlayed,
+    required this.totalTurnsPlayed,
+    required this.totalEncounters,
+    required this.totalPlayTime,
+    required this.averageRoundsByTarget,
+    this.winsByIdentity = const {},
+    this.biggestHit,
+    this.topWinner,
+    this.longestGameRounds,
+    this.longestGameTarget,
+  });
+
+  /// Nombre de parties menées à leur terme.
+  final int gamesPlayed;
+
+  /// Tours joués, toutes parties et tous joueurs confondus.
+  final int totalTurnsPlayed;
+
+  /// Rencontres déclenchées, toutes parties confondues.
+  final int totalEncounters;
+
+  /// Temps de jeu cumulé : somme des [playTimeOf] de chaque partie.
+  final Duration totalPlayTime;
+
+  /// Nombre moyen de manches par partie, par score cible (mode guidé seulement).
+  final Map<int, double> averageRoundsByTarget;
+
+  /// Victoires par identité (alias, sinon nom du jour).
+  final Map<String, int> winsByIdentity;
+
+  /// Le plus gros score marqué en un seul coup, toutes parties confondues.
+  final NamedStat? biggestHit;
+
+  /// Le nom qui revient le plus souvent en gagnant.
+  final NamedStat? topWinner;
+
+  /// La partie la plus longue (en manches), et son score cible.
+  final int? longestGameRounds;
+  final int? longestGameTarget;
+
+  bool get hasData => gamesPlayed > 0;
+
+  static const GameStats empty = GameStats(
+    gamesPlayed: 0,
+    totalTurnsPlayed: 0,
+    totalEncounters: 0,
+    totalPlayTime: Duration.zero,
+    averageRoundsByTarget: {},
+  );
+
+  /// Écart maximal compté entre deux saisies ; au-delà, c'est une pause.
+  static const Duration maxGapBetweenMoves = Duration(minutes: 10);
+
+  /// Temps passé à jouer : somme des écarts entre saisies successives, chacun
+  /// plafonné à [maxGapBetweenMoves], pour ignorer préparation et pauses.
+  static Duration playTimeOf(GameState game) {
+    final start = game.actions
+        .where((a) => a.type == GameActionType.gameStarted)
+        .map((a) => a.createdAt)
+        .firstOrNull;
+    if (start == null) return Duration.zero;
+    final moments = <DateTime>[
+      start,
+      for (final a in game.actions) ...[
+        if (a.createdAt.isAfter(start)) a.createdAt,
+        if (a.undoneAt != null && a.undoneAt!.isAfter(start)) a.undoneAt!,
+      ],
+      if (game.finishedAt != null && game.finishedAt!.isAfter(start))
+        game.finishedAt!,
+    ]..sort();
+    var total = Duration.zero;
+    for (var i = 1; i < moments.length; i++) {
+      final gap = moments[i].difference(moments[i - 1]);
+      total += gap > maxGapBetweenMoves ? maxGapBetweenMoves : gap;
+    }
+    return total;
+  }
+
+  /// Calcule le bilan à partir des parties `finished` ou `archived`.
+  static GameStats of(List<GameState> games) {
+    final finished = games
+        .where((g) =>
+            g.status == GameStatus.finished || g.status == GameStatus.archived)
+        .toList();
+    if (finished.isEmpty) return empty;
+
+    var totalTurns = 0;
+    var totalEncounters = 0;
+    var totalPlayTime = Duration.zero;
+    final roundsByTarget = <int, List<int>>{};
+    final wins = <String, int>{};
+    String? biggestHitName;
+    var biggestHitValue = 0;
+    int? longestRounds;
+    int? longestTarget;
+
+    for (final game in finished) {
+      final facts = GameFacts.of(game);
+      totalTurns += facts.turnsPlayed;
+
+      totalPlayTime += playTimeOf(game);
+
+      if (game.rules.turnMode == TurnMode.guided && facts.roundsPlayed > 0) {
+        roundsByTarget
+            .putIfAbsent(game.rules.targetScore, () => [])
+            .add(facts.roundsPlayed);
+        if (longestRounds == null || facts.roundsPlayed > longestRounds) {
+          longestRounds = facts.roundsPlayed;
+          longestTarget = game.rules.targetScore;
+        }
+      }
+
+      if (facts.biggestHit != null &&
+          facts.biggestHit!.value > biggestHitValue) {
+        final player = game.playerById(facts.biggestHit!.playerId);
+        if (player != null) {
+          biggestHitValue = facts.biggestHit!.value;
+          biggestHitName = _identity(player);
+        }
+      }
+
+      for (final action in game.actions) {
+        if (action.isUndone) continue;
+        totalEncounters += encounterOfAction(action)?.count ?? 0;
+      }
+
+      final winner = game.winnerPlayerId == null
+          ? null
+          : game.playerById(game.winnerPlayerId!);
+      if (winner != null) {
+        final id = _identity(winner);
+        wins[id] = (wins[id] ?? 0) + 1;
+      }
+    }
+
+    final averages = {
+      for (final entry in roundsByTarget.entries)
+        entry.key: entry.value.reduce((a, b) => a + b) / entry.value.length,
+    };
+
+    String? topWinnerName;
+    var topWinnerCount = 0;
+    wins.forEach((name, count) {
+      if (count > topWinnerCount) {
+        topWinnerName = name;
+        topWinnerCount = count;
+      }
+    });
+
+    return GameStats(
+      gamesPlayed: finished.length,
+      totalTurnsPlayed: totalTurns,
+      totalEncounters: totalEncounters,
+      totalPlayTime: totalPlayTime,
+      averageRoundsByTarget: averages,
+      winsByIdentity: wins,
+      biggestHit: biggestHitName == null
+          ? null
+          : NamedStat(name: biggestHitName, value: biggestHitValue),
+      topWinner: topWinnerName == null
+          ? null
+          : NamedStat(name: topWinnerName!, value: topWinnerCount),
+      longestGameRounds: longestRounds,
+      longestGameTarget: longestTarget,
+    );
+  }
+}

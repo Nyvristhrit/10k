@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10K — Compagnon de jeu du 10 000</title>
+<meta name="description" content="Application Android 100% hors ligne qui remplace la feuille de score du jeu de dés 10 000.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎲</text></svg>">
+<link rel="alternate" hreflang="fr" href="https://nyvristhrit.github.io/10k/">
+<link rel="alternate" hreflang="en" href="https://nyvristhrit.github.io/10k/en/">
+<style>
+  /* Police hébergée sur le site (même fichier que l'appli) plutôt que chez
+     Google Fonts : aucune adresse IP de visiteur n'est envoyée à un tiers
+     (voir confidentialite.html). Police variable, graisses 300 à 700. */
+  @font-face {
+    font-family: "Space Grotesk";
+    src: url("fonts/SpaceGrotesk.ttf") format("truetype");
+    font-weight: 300 700;
+    font-display: swap;
+  }
+  :root {
+    --bg-0: #0b0a0f;
+    --bg-1: #141319;
+    --bg-2: #201f2b;
+    --ink: #f4f3f8;
+    --ink-dim: #b8b5c4;
+    --card: rgba(255,255,255,0.045);
+    --card-border: rgba(255,255,255,0.09);
+    --red: #E11D48;
+    --orange: #F97316;
+    --yellow: #FACC15;
+    --green: #22C55E;
+    --blue: #3B82F6;
+    --violet: #8B5CF6;
+    --accent: #6366F1;
+    --pink: #F472B6;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Space Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+    background: radial-gradient(120% 90% at 50% -10%, var(--bg-2), var(--bg-1) 55%, var(--bg-0) 100%);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+  header.hero {
+    text-align: center;
+    padding: 72px 0 8px;
+  }
+  .dice {
+    font-size: 56px;
+    /* `display:block` (pas inline-block) : sinon ce dé et le SVG du logo,
+       tous deux inline par défaut, se retrouvent sur la même ligne — centrés
+       ensemble comme un seul bloc, le dé collé à gauche du logo au lieu
+       d'être au-dessus. */
+    display: block;
+    margin: 0 auto;
+    width: fit-content;
+    animation: bob 3.2s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0) rotate(-4deg); }
+    50% { transform: translateY(-14px) rotate(4deg); }
+  }
+  /* Le logo est un SVG (pas du texte + background-clip:text, peu fiable
+     selon les navigateurs) : mêmes 6 couleurs et mêmes coupures franches que
+     le dégradé de l'appli (voir `home_screen.dart::_stripeShader`). */
+  .logo-svg {
+    /* SVG est `inline` par défaut : `display:block` le fait passer sous le
+       dé au lieu de se placer à côté (voir commentaire sur `.dice`). */
+    display: block;
+    width: min(420px, 72vw);
+    height: auto;
+    margin: 4px auto;
+    filter: drop-shadow(0 8px 30px rgba(99, 102, 241, 0.35));
+  }
+  .tagline {
+    color: var(--ink-dim);
+    font-size: 18px;
+    margin: 0 0 36px;
+  }
+  .cta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 17px;
+    text-decoration: none;
+    padding: 16px 30px;
+    border-radius: 999px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-primary {
+    color: #0b0a0f;
+    background: linear-gradient(120deg, #34D399, #10B981);
+    box-shadow: 0 10px 30px -8px rgba(16, 185, 129, 0.55);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 34px -8px rgba(16, 185, 129, 0.7); }
+  .btn-ghost {
+    color: var(--ink);
+    background: var(--card);
+    border: 1px solid var(--card-border);
+  }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.22); }
+  .support-link {
+    text-align: center;
+    margin: 0 0 22px;
+  }
+  .support-link a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--pink);
+    font-size: 15px;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 9px 20px;
+    border-radius: 999px;
+    border: 1.5px solid rgba(244, 114, 182, 0.55);
+    background: rgba(244, 114, 182, 0.08);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+  .support-link a:hover {
+    background: rgba(244, 114, 182, 0.18);
+    border-color: var(--pink);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px -10px rgba(244, 114, 182, 0.65);
+  }
+  .note {
+    text-align: center;
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    max-width: 440px;
+    margin: 0 auto 56px;
+  }
+  .note b { color: var(--ink); }
+  section.features {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 56px;
+  }
+  @media (max-width: 560px) {
+    section.features { grid-template-columns: 1fr; }
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    padding: 20px 22px;
+  }
+  .card .emoji { font-size: 26px; display: block; margin-bottom: 10px; }
+  .card h3 { margin: 0 0 6px; font-size: 16px; }
+  .card p { margin: 0; color: var(--ink-dim); font-size: 14px; }
+  h2.section-title {
+    text-align: center;
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin: 0 0 20px;
+  }
+  .steps {
+    counter-reset: step;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 56px;
+    display: grid;
+    gap: 12px;
+  }
+  .steps li {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 14px 18px;
+    font-size: 14.5px;
+    color: var(--ink-dim);
+  }
+  .steps li::before {
+    counter-increment: step;
+    content: counter(step);
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: linear-gradient(120deg, var(--violet), var(--accent));
+    color: white;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .steps li > span { flex: 1 1 auto; min-width: 0; }
+  .steps li b { color: var(--ink); }
+  footer {
+    text-align: center;
+    color: var(--ink-dim);
+    font-size: 13px;
+    padding-top: 12px;
+    border-top: 1px solid var(--card-border);
+  }
+  footer a { color: var(--ink-dim); }
+  footer a:hover { color: var(--ink); }
+
+  .version-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--ink-dim);
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    padding: 5px 14px;
+    margin-bottom: 22px;
+  }
+  .version-pill .dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #34D399;
+    box-shadow: 0 0 8px 1px rgba(52, 211, 153, 0.7);
+  }
+  .changelog {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    margin-bottom: 56px;
+    overflow: hidden;
+  }
+  .changelog summary {
+    cursor: pointer;
+    list-style: none;
+    padding: 18px 22px;
+    font-weight: 700;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .changelog summary::-webkit-details-marker { display: none; }
+  .changelog summary::after {
+    content: '▾';
+    color: var(--ink-dim);
+    transition: transform 0.2s ease;
+  }
+  .changelog[open] summary::after { transform: rotate(180deg); }
+  .changelog .entries {
+    padding: 0 22px 20px;
+    border-top: 1px solid var(--card-border);
+  }
+  .changelog .version {
+    padding-top: 16px;
+  }
+  .changelog .version h4 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .changelog .version .date {
+    font-weight: 400;
+    color: var(--ink-dim);
+    font-size: 12.5px;
+  }
+  .changelog ul {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--ink-dim);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .changelog .more {
+    display: block;
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .changelog .more:hover { text-decoration: underline; }
+
+  /* Fond animé : des dés qui tombent doucement, comme sur l'accueil de
+     l'appli (`shared/animations/falling_dice.dart`). Purement CSS, un peu
+     flous et estompés pour rester en arrière-plan, jamais gênants. */
+  .bg-dice {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .bg-dice span {
+    position: absolute;
+    top: -12vh;
+    opacity: 0.28;
+    filter: blur(0.5px);
+    animation-name: fall;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+  @keyframes fall {
+    from { transform: translateY(0) rotate(0deg); }
+    to { transform: translateY(126vh) rotate(360deg); }
+  }
+  .veil {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    backdrop-filter: blur(6px);
+    background: rgba(11, 10, 15, 0.22);
+  }
+  .wrap { position: relative; z-index: 2; }
+  @media (prefers-reduced-motion: reduce) {
+    .bg-dice, .dice { animation: none !important; }
+  }
+  .lang-switch {
+    position: absolute; top: 16px; right: 16px; z-index: 5;
+    color: var(--ink-dim); text-decoration: none; font-size: 14px;
+    font-weight: 600; padding: 6px 12px; border-radius: 999px;
+    border: 1px solid var(--card-border);
+  }
+  .lang-switch:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+  <div class="bg-dice" aria-hidden="true">
+    <span style="left:4%; font-size:30px; animation-duration:19s; animation-delay:-2s;">🎲</span>
+    <span style="left:13%; font-size:22px; animation-duration:24s; animation-delay:-11s;">🎲</span>
+    <span style="left:22%; font-size:40px; animation-duration:16s; animation-delay:-6s;">🎲</span>
+    <span style="left:31%; font-size:26px; animation-duration:21s; animation-delay:-15s;">🎲</span>
+    <span style="left:40%; font-size:34px; animation-duration:18s; animation-delay:-4s;">🎲</span>
+    <span style="left:49%; font-size:24px; animation-duration:23s; animation-delay:-9s;">🎲</span>
+    <span style="left:58%; font-size:38px; animation-duration:17s; animation-delay:-13s;">🎲</span>
+    <span style="left:67%; font-size:28px; animation-duration:22s; animation-delay:-1s;">🎲</span>
+    <span style="left:76%; font-size:32px; animation-duration:20s; animation-delay:-8s;">🎲</span>
+    <span style="left:85%; font-size:24px; animation-duration:25s; animation-delay:-17s;">🎲</span>
+    <span style="left:92%; font-size:36px; animation-duration:15s; animation-delay:-5s;">🎲</span>
+    <span style="left:9%; font-size:20px; animation-duration:27s; animation-delay:-20s;">🎲</span>
+  </div>
+  <div class="veil" aria-hidden="true"></div>
+  <div class="wrap">
+    <a class="lang-switch" href="en/" hreflang="en" lang="en">English</a>
+    <header class="hero">
+      <span class="dice">🎲</span>
+      <svg class="logo-svg" viewBox="0 0 240 120" role="img" aria-label="10K">
+        <defs>
+          <!-- userSpaceOnUse + les coordonnées du viewBox (pas 0-1) : l'angle
+               des bandes suit le cadre du logo, pas la boîte du texte "10K"
+               (plus étroite), sinon la diagonale n'est pas la bonne. -->
+          <linearGradient id="stripes" x1="0" y1="0" x2="240" y2="120" gradientUnits="userSpaceOnUse">
+            <stop offset="0" stop-color="#E11D48"/>
+            <stop offset="0.2059" stop-color="#E11D48"/>
+            <stop offset="0.2059" stop-color="#F97316"/>
+            <stop offset="0.3529" stop-color="#F97316"/>
+            <stop offset="0.3529" stop-color="#FACC15"/>
+            <stop offset="0.5" stop-color="#FACC15"/>
+            <stop offset="0.5" stop-color="#22C55E"/>
+            <stop offset="0.6471" stop-color="#22C55E"/>
+            <stop offset="0.6471" stop-color="#3B82F6"/>
+            <stop offset="0.7941" stop-color="#3B82F6"/>
+            <stop offset="0.7941" stop-color="#8B5CF6"/>
+            <stop offset="1" stop-color="#8B5CF6"/>
+          </linearGradient>
+        </defs>
+        <!-- Space Grotesk n'a pas d'instance 900 sur le web (elle s'arrête à
+             700, contre une graisse simulée par Flutter dans l'appli) : un
+             contour épais de la même couleur comble l'écart et redonne le
+             même aplomb qu'à l'écran. -->
+        <text x="120" y="98" text-anchor="middle" font-family="'Space Grotesk', sans-serif" font-weight="700" font-size="112" fill="url(#stripes)" stroke="url(#stripes)" stroke-width="5" stroke-linejoin="round" paint-order="stroke fill">10K</text>
+      </svg>
+      <p class="tagline">Compagnon de jeu du 10 000 — 100&nbsp;% hors ligne</p>
+      <span class="version-pill"><span class="dot"></span> Version actuelle : v1.8.0</span>
+    </header>
+
+    <div class="cta">
+      <a class="btn btn-primary" href="https://github.com/Nyvristhrit/10k/releases/latest/download/10K.apk">
+        ⬇ Télécharger l'APK (Android)
+      </a>
+      <a class="btn btn-ghost" href="https://github.com/Nyvristhrit/10k">
+        Voir le code sur GitHub
+      </a>
+    </div>
+    <p class="support-link">
+      <a href="https://ko-fi.com/qubestudio" target="_blank" rel="noopener">☕ Offrir un café sur Ko-fi</a>
+    </p>
+    <p class="note">
+      Distribution directe en attendant la publication sur le <b>Play Store</b>.
+      Android bloque par défaut les APK hors Play Store : voir les 3 étapes
+      d'installation ci-dessous.
+    </p>
+
+    <h2 class="section-title">Ça fait quoi ?</h2>
+    <section class="features">
+      <div class="card">
+        <span class="emoji">🎯</span>
+        <h3>Toutes les règles gérées</h3>
+        <p>Sortie à 300, pile de gains, 3 cœurs, rencontre, dernière chance — l'appli applique les règles à ta place.</p>
+      </div>
+      <div class="card">
+        <span class="emoji">📱</span>
+        <h3>Fait pour la table</h3>
+        <p>Tuiles géantes, scores qui grimpent en s'animant, lisibles de loin, posées au centre du jeu.</p>
+      </div>
+      <div class="card">
+        <span class="emoji">🔒</span>
+        <h3>100&nbsp;% hors ligne</h3>
+        <p>Aucune connexion, aucun compte, aucune donnée envoyée. Tout reste sur le téléphone.</p>
+      </div>
+      <div class="card">
+        <span class="emoji">🏆</span>
+        <h3>Stats et records</h3>
+        <p>Parties jouées, temps de jeu, plus gros carton, joueur le plus titré : la table garde la mémoire.</p>
+      </div>
+      <div class="card">
+        <span class="emoji">🌍</span>
+        <h3>Français ou anglais</h3>
+        <p>Change de langue à tout moment avec le bouton FR / EN de l'accueil.</p>
+      </div>
+      <div class="card">
+        <span class="emoji">💀</span>
+        <h3>Un mode caché</h3>
+        <p>Une seconde personnalité de l'appli, plus mordante, à débloquer en secret pour les soirées corsées.</p>
+      </div>
+    </section>
+
+    <h2 class="section-title">Installer l'APK</h2>
+    <ol class="steps">
+      <li><span>Télécharge le fichier <b>10K.apk</b> avec le bouton ci-dessus (depuis le téléphone, dans Chrome).</span></li>
+      <li><span>Ouvre le fichier téléchargé : Android va demander d'<b>autoriser l'installation depuis cette source</b> — accepte.</span></li>
+      <li><span>Si « Play Protect » affiche un avertissement, choisis <b>« Installer quand même »</b> — l'appli n'a aucune permission ni connexion, l'avertissement vient juste du fait qu'elle n'est pas encore sur le Play Store.</span></li>
+    </ol>
+
+    <details class="changelog">
+      <summary>📋 Nouveautés et historique des versions</summary>
+      <div class="entries">
+        <div class="version">
+          <h4>v1.8.0 <span class="date">14 novembre 2026</span></h4>
+          <ul>
+            <li>L'appli parle anglais ! Touche « EN » en haut de l'accueil pour passer en anglais, « FR » pour revenir en français.</li>
+            <li>Nouvel identifiant d'appli, en vue du Play Store : cette version s'installe à côté de l'ancienne au lieu de la remplacer. Désinstalle l'ancienne (les parties qu'elle contient ne sont pas reprises).</li>
+          </ul>
+        </div>
+        <div class="version">
+          <h4>v1.7.1 <span class="date">23 octobre 2026</span></h4>
+          <ul>
+            <li>Les règles de l'appli expliquent maintenant comment changer un joueur de place (appui long sur sa tuile, puis glisser).</li>
+            <li>Le mode caché sent encore plus fort : de vrais bruitages, des taches qui tournent au camouflage… et l'icône du téléphone qui se met à ses couleurs.</li>
+          </ul>
+        </div>
+        <div class="version">
+          <h4>v1.7.0 <span class="date">23 octobre 2026</span></h4>
+          <ul>
+            <li>Change un joueur de place en pleine partie : appui long sur sa tuile, puis glisse-la sur un autre joueur pour prendre sa place. Relâchée sans bouger, elle propose toujours de faire quitter la partie.</li>
+            <li>Le temps de jeu cumulé des stats est corrigé : il ne compte plus la préparation ni les longues pauses (partie laissée ouverte jusqu'au lendemain…).</li>
+            <li>Le mode caché devient encore plus… parfumé. 💩</li>
+          </ul>
+        </div>
+        <div class="version">
+          <h4>v1.6.0 <span class="date">16 septembre 2026</span></h4>
+          <ul>
+            <li>Correction d'un vrai bug de rencontre : un troisième échec pouvait faire retomber un joueur exactement sur le score d'un autre sans déclencher de rencontre (deux joueurs restaient alors bloqués au même total).</li>
+            <li>Une rencontre redonne désormais toujours 3 vies à la victime, même sans vider complètement sa pile.</li>
+            <li>Les noms de joueur trop longs sont maintenant tronqués par « … » plutôt qu'affichés en tout petit.</li>
+            <li>Le plateau de dés virtuel affiche bien 5 dés (au lieu de 6), et la couleur des points reste lisible quelle que soit la teinte tirée.</li>
+            <li>Les épithètes des noms par défaut (ex. « Tocard », « Farceur ») ne se répètent plus entre deux joueurs de la même partie.</li>
+          </ul>
+        </div>
+        <div class="version">
+          <h4>v1.5.0 <span class="date">4 septembre 2026</span></h4>
+          <ul>
+            <li>Dernière chance : un joueur délogé peut désormais retenter sa chance et redéloger l'adversaire — la revanche est illimitée, jusqu'à ce qu'un candidat traverse un tour complet sans se faire déloger.</li>
+            <li>Une fenêtre « Quoi de neuf » résume les nouveautés à l'ouverture de l'appli après une mise à jour.</li>
+          </ul>
+        </div>
+        <div class="version">
+          <h4>v1.4.0 <span class="date">4 septembre 2026</span></h4>
+          <ul>
+            <li>Nouvel écran « Stats & records » : parties jouées, temps de jeu cumulé, manches moyennes par score cible, plus gros carton…</li>
+            <li>Alias de joueur (stable d'une partie à l'autre) et écran « Alias & profils » : victoires par personne, couleur perso, renommage.</li>
+          </ul>
+        </div>
+        <div class="version">
+          <h4>v1.3.3 <span class="date">4 septembre 2026</span></h4>
+          <ul>
+            <li>Correction : les noms de joueur trop longs (surtout en mode trash) n'étaient plus coupés en plein mot — le texte rétrécit désormais pour tenir en entier sur la tuile.</li>
+            <li>Le halo du joueur dont c'est le tour est plus visible.</li>
+            <li>Nouveau réglage pour masquer les dés intégrés si tu joues avec de vrais dés, qui adoptent aussi une teinte aléatoire à chaque ouverture.</li>
+          </ul>
+        </div>
+        <div class="version">
+          <h4>v1.3.0 <span class="date">4 septembre 2026</span></h4>
+          <ul>
+            <li>Historique de la partie : consulte tous les coups joués manche par manche, et reviens en arrière en touchant l'un d'eux.</li>
+            <li>Plateau de dés virtuel intégré : lance, garde et relance des dés directement dans l'appli si tu n'en as pas sous la main.</li>
+          </ul>
+        </div>
+        <div class="version">
+          <h4>v1.2.0 <span class="date">19 août 2026</span></h4>
+          <ul>
+            <li>Éditeur d'épithètes trash (réglages) clarifié et plafonné à 20.</li>
+            <li>Corrections visuelles de cette page (logo, mode paysage).</li>
+          </ul>
+        </div>
+        <div class="version">
+          <h4>v1.1.0 <span class="date">19 août 2026</span></h4>
+          <ul>
+            <li>Correction : les vies se restaurent bien à 3 quand une rencontre vide entièrement la pile d'un joueur.</li>
+            <li>Toggle du mode trash rendu plus visible.</li>
+            <li>Noms de joueur par défaut façon totem scout (espèce + épithète), avec éditeur d'épithètes perso en mode trash.</li>
+            <li>Écran toujours allumé pendant la partie (réglable).</li>
+            <li>Mode paysage pour utilisation sur tablette.</li>
+            <li>Première mise à disposition publique (dépôt GitHub, cette page).</li>
+          </ul>
+        </div>
+        <a class="more" href="https://github.com/Nyvristhrit/10k/blob/main/CHANGELOG.md">
+          Voir l'historique complet et les versions précédentes →
+        </a>
+      </div>
+    </details>
+
+    <footer>
+      Imaginé par Ben, vibecodé avec Claude · Licence MIT ·
+      <a href="https://github.com/Nyvristhrit/10k">github.com/Nyvristhrit/10k</a>
+      <br>
+      <a href="confidentialite.html">Confidentialité</a> ·
+      <a href="mentions-legales.html">Mentions légales</a>
+    </footer>
+  </div>
+</body>
+</html>
