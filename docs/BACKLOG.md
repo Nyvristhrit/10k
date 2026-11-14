@@ -14,7 +14,7 @@ Ce qui reste à faire. Ce qui est livré est dans `CHANGELOG.md`.
 - [ ] Compte Play Console au nom de la société (nécessite un numéro D-U-N-S).
 - [ ] Signature release avec une clé dédiée, sauvegardée hors du dépôt
       (aujourd'hui l'APK est signé avec la clé debug).
-- [ ] Build `.aab` : `flutter build appbundle`.
+- [x] Build `.aab` : `flutter build appbundle --release` (vérifié, ~18 Mo téléchargés par téléphone).
 - [ ] Mentions légales et politique de confidentialité au nom de la société.
 - [ ] Questionnaire IARC : déclarer le mode trash. Sécurité des données :
       aucune donnée collectée. URL de confidentialité :

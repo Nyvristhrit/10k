@@ -43,7 +43,7 @@ Prérequis : Flutter (stable, Dart 3.12 ou plus) et le SDK Android.
 flutter pub get
 flutter test                 # tests du moteur et des écrans
 flutter run                  # sur un appareil Android branché
-flutter build apk --release
+flutter build apk --release --target-platform android-arm,android-arm64
 ```
 
 Structure de `lib/` :

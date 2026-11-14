@@ -202,7 +202,8 @@ Développement initial (juillet-août 2026), détail dans l'historique Git :
 
 1. Monter `version:` dans `pubspec.yaml` (ex. `1.8.0+12` → `1.8.1+13`). C'est
    la version affichée dans « À propos ».
-2. `flutter build apk --release`
+2. `flutter build apk --release --target-platform android-arm,android-arm64`
+   (téléphones uniquement : environ 32 Mo au lieu de 51 Mo)
 3. Tester sur le téléphone :
    `adb -s <device-id> install -r build/app/outputs/flutter-apk/app-release.apk`
 4. Copier l'APK à la racine (fichier ignoré par Git) :

@@ -32,7 +32,9 @@ flutter pub get
 flutter test
 flutter analyze
 flutter build apk --debug      # vérifie que ça compile
-flutter build apk --release
+flutter build apk --release --target-platform android-arm,android-arm64
+                               # APK GitHub (~32 Mo, sans x86_64)
+flutter build appbundle --release   # .aab pour le Play Store
 adb install -r build/app/outputs/flutter-apk/app-release.apk
 ```
 
